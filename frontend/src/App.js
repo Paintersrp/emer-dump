@@ -1,8 +1,9 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import CompileRenderPage from "@/components/relay/CompileRenderPage";
 import ExecutePage from "@/components/relay/ExecutePage";
+import AuditPage from "@/components/relay/AuditPage";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -51,8 +52,174 @@ const STAGES = [
   { id: "intake",         label: "Intake",          path: null },
   { id: "compile-render", label: "Compile / Render", path: "/" },
   { id: "execute",        label: "Execute",          path: "/execute" },
-  { id: "audit",          label: "Audit",            path: null },
+  { id: "audit",          label: "Audit",            path: "/audit" },
 ];
+
+/* ─────────────────────────────────────────────────────
+   Audit mock states — switch via ?state=<auditStatus>
+───────────────────────────────────────────────────── */
+const AUDIT_MOCKS = {
+  blocked: {
+    auditStatus: "blocked",
+    blockingReason: null,
+    executorResultArtifact: null,
+    validationStatus: "not_reviewed",
+    validationReportPath: null,
+    changedFilesCount: null,
+    diffSummary: null,
+    scopeStatus: "not_reviewed",
+    scopeNotes: null,
+    blockers: [],
+    warnings: [],
+    auditNotes: null,
+    auditDecision: "pending",
+    acceptedAt: null,
+    completedAt: null,
+    auditArtifacts: [],
+    recentLogs: [],
+  },
+  ready: {
+    auditStatus: "ready",
+    blockingReason: null,
+    executorResultArtifact: { path: "runs/99/executor_result.json", exitCode: 0 },
+    validationStatus: "passed",
+    validationReportPath: "runs/99/validation_report.json",
+    changedFilesCount: 7,
+    diffSummary: { additions: 142, deletions: 38 },
+    scopeStatus: "in_scope",
+    scopeNotes: null,
+    blockers: [],
+    warnings: [{ id: "w1", message: "2 test files skipped during validation" }],
+    auditNotes: null,
+    auditDecision: "pending",
+    acceptedAt: null,
+    completedAt: null,
+    auditArtifacts: [],
+    recentLogs: [
+      { timestamp: "14:32:01", message: "Executor result captured", level: "info" },
+      { timestamp: "14:32:15", message: "Validation passed with 1 warning", level: "warn" },
+      { timestamp: "14:32:16", message: "Scope: all changes within declared boundaries", level: "info" },
+      { timestamp: "14:32:17", message: "Audit ready — awaiting decision", level: "info" },
+    ],
+  },
+  passed: {
+    auditStatus: "passed",
+    blockingReason: null,
+    executorResultArtifact: { path: "runs/99/executor_result.json", exitCode: 0 },
+    validationStatus: "passed",
+    validationReportPath: "runs/99/validation_report.json",
+    changedFilesCount: 7,
+    diffSummary: { additions: 142, deletions: 38 },
+    scopeStatus: "in_scope",
+    scopeNotes: null,
+    blockers: [],
+    warnings: [],
+    auditNotes: null,
+    auditDecision: "accepted",
+    acceptedAt: "2026-06-21T14:35:22Z",
+    completedAt: "2026-06-21T14:35:22Z",
+    auditArtifacts: [
+      { path: "runs/99/audit_packet.json", type: "audit" },
+      { path: "runs/99/validation_report.json", type: "validation" },
+      { path: "runs/99/executor_result.json", type: "result" },
+    ],
+    recentLogs: [
+      { timestamp: "14:32:01", message: "Executor result captured", level: "info" },
+      { timestamp: "14:32:15", message: "Validation passed", level: "info" },
+      { timestamp: "14:32:16", message: "Scope: all changes within declared boundaries", level: "info" },
+      { timestamp: "14:35:20", message: "Audit decision: accepted", level: "info" },
+      { timestamp: "14:35:22", message: "Run accepted — audit complete", level: "info" },
+    ],
+  },
+  warning: {
+    auditStatus: "warning",
+    blockingReason: null,
+    executorResultArtifact: { path: "runs/99/executor_result.json", exitCode: 0 },
+    validationStatus: "warning",
+    validationReportPath: "runs/99/validation_report.json",
+    changedFilesCount: 7,
+    diffSummary: { additions: 142, deletions: 38 },
+    scopeStatus: "in_scope",
+    scopeNotes: null,
+    blockers: [],
+    warnings: [
+      { id: "w1", message: "2 test files skipped during validation" },
+      { id: "w2", message: "Optional assertion skipped: coverage threshold not enforced" },
+    ],
+    auditNotes: null,
+    auditDecision: "accepted_with_warnings",
+    acceptedAt: "2026-06-21T15:02:44Z",
+    completedAt: "2026-06-21T15:02:44Z",
+    auditArtifacts: [
+      { path: "runs/99/audit_packet.json", type: "audit" },
+      { path: "runs/99/validation_report.json", type: "validation" },
+    ],
+    recentLogs: [
+      { timestamp: "15:01:10", message: "Executor result captured", level: "info" },
+      { timestamp: "15:01:25", message: "Validation passed with 2 warnings", level: "warn" },
+      { timestamp: "15:02:40", message: "Audit decision: accepted with warnings", level: "warn" },
+      { timestamp: "15:02:44", message: "Run accepted with non-blocking warnings", level: "warn" },
+    ],
+  },
+  revision_required: {
+    auditStatus: "revision_required",
+    blockingReason: null,
+    executorResultArtifact: { path: "runs/99/executor_result.json", exitCode: 1 },
+    validationStatus: "warning",
+    validationReportPath: "runs/99/validation_report.json",
+    changedFilesCount: 12,
+    diffSummary: { additions: 304, deletions: 87 },
+    scopeStatus: "warning",
+    scopeNotes: "Changes detected in files outside the declared scope boundary",
+    blockers: [
+      { id: "b1", message: "Modified files outside declared scope boundary" },
+    ],
+    warnings: [
+      { id: "w1", message: "Executor exit code 1 — non-zero exit detected" },
+    ],
+    auditNotes: null,
+    auditDecision: "revision_required",
+    acceptedAt: null,
+    completedAt: null,
+    auditArtifacts: [],
+    recentLogs: [
+      { timestamp: "16:10:05", message: "Executor result captured (exit 1)", level: "warn" },
+      { timestamp: "16:10:20", message: "Scope check: changes outside boundary detected", level: "error" },
+      { timestamp: "16:11:00", message: "Audit decision: revision required", level: "error" },
+    ],
+  },
+  rejected: {
+    auditStatus: "rejected",
+    blockingReason: null,
+    executorResultArtifact: { path: "runs/99/executor_result.json", exitCode: 2 },
+    validationStatus: "failed",
+    validationReportPath: "runs/99/validation_report.json",
+    changedFilesCount: 5,
+    diffSummary: { additions: 88, deletions: 22 },
+    scopeStatus: "out_of_scope",
+    scopeNotes: null,
+    blockers: [
+      { id: "b1", message: "Executor output does not match expected schema" },
+      { id: "b2", message: "Validation failed: 3 critical assertions failed" },
+      { id: "b3", message: "Scope violation: executor modified restricted path" },
+    ],
+    warnings: [],
+    auditNotes: null,
+    auditDecision: "rejected",
+    acceptedAt: null,
+    completedAt: "2026-06-21T17:45:11Z",
+    auditArtifacts: [
+      { path: "runs/99/rejection_report.json", type: "audit" },
+    ],
+    recentLogs: [
+      { timestamp: "17:44:00", message: "Executor result captured (exit 2)", level: "error" },
+      { timestamp: "17:44:15", message: "Validation failed: 3 critical assertions", level: "error" },
+      { timestamp: "17:44:30", message: "Scope violation: restricted path modified", level: "error" },
+      { timestamp: "17:45:10", message: "Audit decision: rejected", level: "error" },
+      { timestamp: "17:45:11", message: "Run rejected — blocking issues found", level: "error" },
+    ],
+  },
+};
 
 /* ─────────────────────────────────────────────────────
    Relay demo shell — shared chrome wrapper
@@ -203,6 +370,30 @@ function ExecuteRoute() {
 }
 
 /* ─────────────────────────────────────────────────────
+   Route: Audit
+───────────────────────────────────────────────────── */
+function AuditRoute() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const state = searchParams.get("state") || "blocked";
+  const mock = AUDIT_MOCKS[state] || AUDIT_MOCKS.blocked;
+
+  return (
+    <RelayShell activeStageId="audit">
+      <AuditPage
+        {...MOCK_RUN}
+        {...mock}
+        onReturnToExecute={() => navigate("/execute")}
+        onAccept={() => console.log("audit: accept")}
+        onAcceptWithWarning={() => console.log("audit: accept with warning")}
+        onRequestRevision={() => console.log("audit: request revision")}
+        onReject={() => console.log("audit: reject")}
+      />
+    </RelayShell>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
    App root
 ───────────────────────────────────────────────────── */
 function App() {
@@ -211,6 +402,7 @@ function App() {
       <Routes>
         <Route path="/"        element={<CompileRenderRoute />} />
         <Route path="/execute" element={<ExecuteRoute />} />
+        <Route path="/audit"   element={<AuditRoute />} />
       </Routes>
     </BrowserRouter>
   );
