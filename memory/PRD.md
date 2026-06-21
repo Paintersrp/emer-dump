@@ -105,6 +105,24 @@ onProceedToAudit: () => void
 - Test coverage: 100% (iteration_4) — 44/44 tests across all 6 states
 - App.js updated: AUDIT_MOCKS with all 6 states, URL param switching (?state=), /audit route, Audit tab navigable
 
+### IntakePage.js (Completed — Feb 2026)
+- **3 intake states**: intake_needs_review, approved, blocked
+- Dominant state card: INTAKE REVIEW (amber) / INTAKE APPROVED (green) / INTAKE BLOCKED (red)
+- State card actions: Approve Intake / Needs Revision / Block Run (intake_needs_review only)
+- "Proceed to Compile / Render" CTA in approved state
+- 5-step Intake Pipeline: Handoff loaded → Config reviewed → Executor selected → Model selected → Intake approved
+- Per-state pipeline step logic (success/active/accepted/blocked/waiting)
+- Handoff Summary section (title, intent, artifact, source, createdBy) — hidden when blocked
+- Run Configuration section with interactive adapter/model dropdowns (intake_needs_review) or read-only text (other states)
+- Adapter → Model dependency: OpenCode Go, Codex, Antigravity each have distinct model lists; changing adapter resets model to first available
+- Readiness section (preflight checks with OK/Warn/Error badges + PREFLIGHT N/N badge) — hidden when blocked
+- Current Issues section (amber warnings / red errors) — hidden when no issues or blocked
+- Activity log preview, Generated Artifacts section
+- Right inspector panel: 5 Details sections (Run State, Handoff, Configuration, Executor, Approval) + Artifacts/Validation/Logs tabs
+- All interactive elements have data-testid attributes
+- Test coverage: 100% (iteration_5) — 58/58 tests across all 3 states
+- App.js updated: INTAKE_MOCKS with 3 states, URL param switching (?state=), /intake route, Intake tab now navigable
+
 ### P1 — Next
 - [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
 - [ ] CompileRenderPage: active/running compile state (progress indicator on compile step)
@@ -118,4 +136,4 @@ onProceedToAudit: () => void
 - [ ] Collapsible pipeline steps on hover
 - [ ] Transition animations between pipeline states
 - [ ] Keyboard navigation for stage tabs
-- [ ] Intake stage page design
+- [ ] Timestamp formatting: ISO → relative time in Execute/Audit inspectors
