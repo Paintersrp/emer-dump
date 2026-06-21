@@ -1,75 +1,109 @@
 {
-  "theme": "Dark",
-  "archetype": "Retro-Futurism / Terminal Look mixed with Swiss Brutalist (Archetype 4/7 for technical precision)",
-  "domain_context": "Developer Tools / Technical Workbench / CI-CD Pipeline",
+  "project_name": "Relay Plan Detail Page",
+  "theme": "dark",
+  "archetype": "4 (Swiss & High-Contrast / Technical Workspace)",
+  "design_philosophy": "Operational, terminal-adjacent style. Dense but readable. Crisp hierarchy with restrained borders. Uses color strictly for status meaning, avoiding decorative gradients or typical project-management aesthetics.",
   "colors": {
-    "background": "bg-[#0A0A0A] or bg-slate-950",
-    "surface": "bg-[#111111] or bg-slate-900 (Use for inspector panels, inner cards)",
-    "border": "border-slate-800 or border-white/10 (Crisp 1px borders, NO soft shadows, NO glowing outlines)",
-    "text_primary": "text-slate-100",
-    "text_secondary": "text-slate-400",
-    "text_muted": "text-slate-600",
-    "accent_cyan": "text-cyan-400 bg-cyan-950/30 border-cyan-800 (Active/Selected)",
-    "accent_gold": "text-amber-400 bg-amber-950/20 border-amber-800/50 (Blocked/Review)",
-    "accent_gray": "text-slate-500 border-slate-700 (Waiting/Pending)",
-    "accent_na": "text-slate-700 border-slate-800 border-dashed (N/A)"
+    "background": {
+      "page": "bg-[#0A0A0A] or bg-zinc-950",
+      "surface": "bg-[#111111] or bg-zinc-900",
+      "surface_hover": "hover:bg-zinc-800",
+      "surface_active": "bg-zinc-800"
+    },
+    "text": {
+      "primary": "text-zinc-100",
+      "secondary": "text-zinc-400",
+      "tertiary": "text-zinc-500",
+      "inverse": "text-zinc-950"
+    },
+    "border": {
+      "default": "border-zinc-800",
+      "focus": "border-zinc-600"
+    },
+    "status": {
+      "active_in_progress": "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+      "needs_attention_completion_ready": "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
+      "complete": "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+      "abandoned_skipped": "text-zinc-500 bg-zinc-500/10 border-zinc-500/20",
+      "blocked_dependency": "text-red-400 bg-red-400/10 border-red-400/20"
+    }
   },
   "typography": {
-    "fonts": {
-      "headings": "IBM Plex Sans, Chivo, or Geist",
-      "body": "IBM Plex Sans, Inter (if others unavailable), or Geist",
-      "monospace": "JetBrains Mono, Roboto Mono, or standard ui-monospace (CRITICAL: MUST use for IDs, paths, run states, statuses, and step numbers)"
+    "font_families": {
+      "primary": "font-sans (Geist, Inter, or IBM Plex Sans)",
+      "monospace": "font-mono (JetBrains Mono, IBM Plex Mono)"
     },
-    "hierarchy": {
-      "stage_header": "text-2xl font-semibold tracking-tight text-slate-100",
-      "stage_subtitle": "text-sm text-slate-400 font-mono",
-      "section_header": "text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4",
-      "body": "text-sm text-slate-300",
-      "mono_label": "text-[11px] font-mono text-slate-500 uppercase tracking-wider"
+    "rules": {
+      "headings": "Compact, tracking-tight, minimal weight variation (use Medium/Semibold instead of ExtraBold).",
+      "monospace_usage": "Strictly for IDs (planId, passId), repo names, branch names, artifact paths, and executor adapter names.",
+      "sizes": {
+        "h1": "text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-100",
+        "h2": "text-xl font-medium tracking-tight text-zinc-100",
+        "eyebrow": "text-xs font-mono uppercase tracking-[0.2em] text-zinc-500",
+        "body": "text-sm text-zinc-300",
+        "small": "text-xs text-zinc-400"
+      }
     }
   },
-  "layout_and_spacing": {
-    "page_structure": "Flex layout. Main content area (flex-1) left/center, Right Inspector panel (w-80 or w-96, border-l border-slate-800, h-full, overflow-y-auto).",
-    "spacing_system": "Dense control-room spacing. p-4, p-6. Container blocks should have rigid structures.",
-    "borders": "Expose the skeleton. Use border-collapse styles. 1px borders separating all major sections."
+  "spacing_and_layout": {
+    "container": "max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 md:space-y-8",
+    "corners": "rounded-md (max 6px radius for sharp, technical feel)",
+    "borders": "1px solid border-zinc-800, never thick, never glowing",
+    "density": "Compact paddings (px-3 py-2) for table/list items to maintain high data density"
   },
   "components": {
-    "blocker_card": {
-      "style": "Sharp corners (rounded-sm or rounded-none). Flat background (bg-amber-950/10). 1px solid border-amber-900/50.",
-      "layout": "Flex row. Warning icon left (amber), text center, CTA button right.",
-      "cta_button": "Shadcn Button, size 'sm', variant 'outline'. border-amber-700/50 text-amber-400 hover:bg-amber-950/30 hover:text-amber-300."
+    "header_breadcrumb": {
+      "layout": "Flexbox, items-center, gap-3, bottom-bordered pb-4",
+      "elements": [
+        "Breadcrumb: 'Plans / <plan title>' in text-sm text-zinc-400",
+        "Title: Large prominent h1",
+        "Status Badge: Small pill, colored by status",
+        "Metadata row: Monospace IDs, Repo/Branch with small icons, artifact path, updated timestamp (text-xs text-zinc-500)"
+      ]
     },
-    "stepper_pipeline": {
-      "style": "Compact vertical layout. Each step is a row.",
-      "step_row": "flex items-center gap-3 py-2 border-b border-slate-800/50 last:border-0",
-      "step_status_icon": "16px or 20px. CircleDashed/Clock for waiting, AlertCircle/XOctagon for blocked, Minus for N/A.",
-      "step_text": "text-sm. Monospace font for pipeline step names is preferred.",
-      "states": {
-        "blocked": "text-amber-400 icon, text-slate-200 step name",
-        "waiting": "text-slate-600 icon, text-slate-500 step name",
-        "na": "text-slate-700 icon, text-slate-600 step name line-through or heavily muted"
-      }
+    "plan_summary_card": {
+      "layout": "Bordered container (border-zinc-800 bg-zinc-900/50), p-5, rounded-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4",
+      "content": "Eyebrow (monospace), Title (text-lg), Message (text-sm text-zinc-400)",
+      "action": "Primary button (white/light gray bg, black text) for main action (Open current pass, Review completion evidence, etc.)"
     },
-    "right_inspector": {
-      "tabs": "Shadcn Tabs. Use w-full. TabList should be bg-transparent border-b border-slate-800 rounded-none h-auto p-0. TabTrigger should be rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent px-4 py-2 text-xs uppercase tracking-wider font-semibold.",
-      "details_section": "Vertical stack of key-value pairs. Label: mono_label. Value: text-sm flex items-center gap-2 mono text-slate-200. Add border-b border-slate-800/50 pb-3 mb-3 last:border-0."
+    "progress_summary_strip": {
+      "layout": "Flex row, divide-x divide-zinc-800 border border-zinc-800 rounded-md bg-zinc-950 overflow-hidden",
+      "metrics": "Each block px-4 py-3 flex-1 flex flex-col gap-1",
+      "typography": "Label in text-xs text-zinc-500, Value in text-xl font-mono text-zinc-100"
     },
-    "artifacts_empty_state": {
-      "style": "Subtle dashed border (border-dashed border-slate-800), p-8 flex flex-col items-center justify-center text-center bg-slate-900/20",
-      "text": "text-sm text-slate-500"
+    "pass_timeline_list": {
+      "layout": "Ordered vertical list, border border-zinc-800 rounded-md divide-y divide-zinc-800 bg-zinc-950",
+      "row": "Flexbox (or Grid cols) py-3 px-4 hover:bg-zinc-900/50 transition-colors items-center gap-4 text-sm",
+      "columns": {
+        "sequence": "text-xs font-mono text-zinc-500 w-8",
+        "name_and_id": "Flex col gap-0.5 min-w-[200px]. Name text-zinc-200 font-medium, ID text-xs font-mono text-zinc-500",
+        "status_pill": "Compact padding, color based on status",
+        "goal_scope": "Flex col gap-0.5 flex-1. Goal text-zinc-300, Scope text-xs text-zinc-500 truncate max-w-sm",
+        "dependencies": "Badges in text-xs font-mono. Red if blocked",
+        "actions": "Flex gap-2 items-center. Ghost buttons for View/Run/Copy"
+      },
+      "empty_states": "Intentional copy like 'No run created yet', 'No dependencies' in text-zinc-500 italic"
+    },
+    "artifacts_section": {
+      "layout": "Grid cols-1 md:grid-cols-2 gap-4 border border-zinc-800 rounded-md p-4 bg-zinc-900/30",
+      "details": "Label/Value pairs. Labels text-xs text-zinc-500, Values text-sm font-mono text-zinc-300"
     }
   },
-  "icons": {
-    "library": "lucide-react",
-    "usage": "Use AlertTriangle for blockers, CircleDashed for waiting, Ban or MinusCircle for N/A, FileCode for artifacts. Use size={16} to keep UI dense."
+  "interactive_elements": {
+    "buttons": "Restrained. Primary: bg-zinc-100 text-zinc-950 hover:bg-white. Secondary/Ghost: hover:bg-zinc-800 text-zinc-300",
+    "links": "text-zinc-300 hover:text-white underline-offset-4 hover:underline",
+    "pills": "rounded-full px-2 py-0.5 text-xs font-medium border"
   },
-  "instructions_to_main_agent": [
-    "CRITICAL: Do NOT add soft shadows (`shadow-md`, `shadow-lg`). Use strictly 1px borders (`border-slate-800`) to define hierarchy.",
-    "CRITICAL: Do NOT use gradients or consumer SaaS aesthetics. The aesthetic is purely functional, dark, data-dense.",
-    "CRITICAL: Build the components using `.js` files, NOT `.tsx` files.",
-    "CRITICAL: EVERY interactive element, status badge, and pipeline step MUST have a `data-testid` attribute (e.g., `data-testid=\"blocker-cta-button\"`, `data-testid=\"pipeline-step-compile\"`).",
-    "CRITICAL: Ensure the right inspector tab content uses dense key-value pair layouts. Keep text sizes to `text-sm` and `text-xs`.",
-    "Use standard Tailwind CSS classes. Use Lucide React for icons.",
-    "Implement Shadcn UI primitives but override their default rounded/shadowy styles to be sharp (`rounded-sm` or `rounded-none`, `shadow-none`)."
-  ]
+  "testing_attributes": {
+    "rule": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case based on role.",
+    "examples": [
+      "data-testid=\"plan-breadcrumb-link\"",
+      "data-testid=\"plan-status-badge\"",
+      "data-testid=\"plan-summary-action-button\"",
+      "data-testid=\"pass-row-1\"",
+      "data-testid=\"pass-run-button-1\"",
+      "data-testid=\"copy-pass-id-button\""
+    ]
+  },
+  "instructions_to_main_agent": "IMPORTANT: Write React components using .js/.jsx syntax, NOT .tsx. Ensure the layout does not resemble a kanban board or marketing page. Strictly use the provided status color system. Implement the page structure exactly as specified in the components section using Tailwind CSS. Preserve dark theme and compact technical layout. Build components functionally using Shadcn primitives customized for dense, border-restrained styling."
 }
