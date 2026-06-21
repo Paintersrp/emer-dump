@@ -8,46 +8,45 @@ import {
   Minus,
   FileCode,
   CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────
-   Pipeline step definitions
+   Pipeline definitions
 ───────────────────────────────────────────────────── */
 const PIPELINE_STEPS = [
   {
     id: "compile",
     label: "Compile packet",
-    waitingLabel: "Waiting on Intake approval",
+    helperText: "Compile becomes available after Intake approval.",
   },
   {
     id: "packet-validation",
     label: "Packet validation",
-    waitingLabel: "Waiting on compile",
   },
   {
     id: "repair",
     label: "Repair",
-    waitingLabel: "Not applicable",
+    naNote: "Becomes relevant only if validation fails.",
   },
   {
     id: "render-brief",
     label: "Render executor brief",
-    waitingLabel: "Waiting on valid packet",
   },
   {
     id: "brief-validation",
     label: "Brief validation",
-    waitingLabel: "Waiting on rendered brief",
   },
   {
     id: "approval",
     label: "Approval",
-    waitingLabel: "Waiting on validated brief",
   },
 ];
 
 /* ─────────────────────────────────────────────────────
    Status visual config
+   — waiting steps intentionally have no badge:
+     the muted icon + label already communicates state.
 ───────────────────────────────────────────────────── */
 function getStepConfig(status) {
   switch (status) {
@@ -57,15 +56,16 @@ function getStepConfig(status) {
         iconCls: "text-amber-400",
         nameCls: "text-slate-200 font-medium",
         badge: "Blocked",
-        badgeCls: "bg-amber-950/20 text-amber-400 border border-amber-800/40",
+        badgeCls:
+          "bg-amber-950/25 text-amber-400 border border-amber-800/50",
       };
     case "na":
       return {
         Icon: Minus,
         iconCls: "text-slate-700",
         nameCls: "text-slate-700",
-        badge: "Not applicable",
-        badgeCls: "text-slate-700 border border-dashed border-slate-800",
+        badge: null, // shown via naNote inline
+        badgeCls: null,
       };
     case "success":
       return {
@@ -73,39 +73,28 @@ function getStepConfig(status) {
         iconCls: "text-cyan-400",
         nameCls: "text-slate-100 font-medium",
         badge: "Complete",
-        badgeCls: "bg-cyan-950/20 text-cyan-400 border border-cyan-800/40",
+        badgeCls:
+          "bg-cyan-950/25 text-cyan-400 border border-cyan-800/50",
       };
-    default: // waiting / pending
+    default: // waiting — no badge, muted state communicates it
       return {
         Icon: CircleDashed,
-        iconCls: "text-slate-600",
-        nameCls: "text-slate-500",
-        badge: null, // use step.waitingLabel
-        badgeCls: "text-slate-600 border border-slate-800",
+        iconCls: "text-slate-700",
+        nameCls: "text-slate-600",
+        badge: null,
+        badgeCls: null,
       };
   }
 }
 
 /* ─────────────────────────────────────────────────────
-   Shared tiny components
+   Inspector KV row — stacked label / value
 ───────────────────────────────────────────────────── */
-const SectionLabel = ({ children }) => (
-  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600 mb-2">
-    {children}
-  </p>
-);
-
-const KVRow = ({
-  label,
-  value,
-  valueCls,
-  mono = true,
-  isLast = false,
-}) => (
-  <div
-    className={`py-1.5 ${!isLast ? "border-b border-[#1d1d1d]" : ""}`}
-  >
-    <p className="text-[10px] text-slate-600 mb-0.5 leading-tight">{label}</p>
+const KVRow = ({ label, value, valueCls, mono = true, isLast = false }) => (
+  <div className={`py-2 ${!isLast ? "border-b border-[#1c1c1c]" : ""}`}>
+    <p className="text-[10px] text-slate-600 mb-0.5 leading-none tracking-wide">
+      {label}
+    </p>
     <p
       className={`text-[11px] leading-snug ${mono ? "font-mono" : ""} ${
         valueCls || "text-slate-400"
@@ -116,9 +105,12 @@ const KVRow = ({
   </div>
 );
 
+/* ─────────────────────────────────────────────────────
+   Inspector section group
+───────────────────────────────────────────────────── */
 const InspectorSection = ({ title, rows, isLast = false }) => (
-  <div className={`px-4 py-3 ${!isLast ? "border-b border-[#222]" : ""}`}>
-    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600 mb-2">
+  <div className={`px-4 pt-3 pb-2 ${!isLast ? "border-b border-[#1e1e1e]" : ""}`}>
+    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2 pb-1.5 border-b border-[#1c1c1c]">
       {title}
     </p>
     {rows.map((row, i) => (
@@ -128,95 +120,146 @@ const InspectorSection = ({ title, rows, isLast = false }) => (
 );
 
 /* ─────────────────────────────────────────────────────
-   Blocker card
+   Blocker card — left-accent, eyebrow, dominant title
 ───────────────────────────────────────────────────── */
 const BlockerCard = ({ onReturnToIntake }) => (
   <div
     data-testid="prepare-blocker-card"
-    className="flex items-start gap-4 p-4 bg-amber-950/10 border border-amber-800/30 rounded-sm"
+    className="border-l-2 border-amber-600/60 bg-amber-950/8 rounded-r-sm pl-4 pr-4 py-3"
+    style={{ background: "rgba(120, 53, 15, 0.06)" }}
   >
-    <AlertTriangle
-      size={15}
-      className="text-amber-400 flex-shrink-0 mt-0.5"
-    />
-    <div className="flex-1 min-w-0">
-      <p
-        className="text-sm font-semibold text-amber-300 mb-0.5"
-        data-testid="blocker-title"
+    {/* Eyebrow */}
+    <p className="text-[10px] font-mono uppercase tracking-widest text-amber-600/60 mb-1.5">
+      Current blocker
+    </p>
+
+    {/* Body row */}
+    <div className="flex items-start justify-between gap-6">
+      <div className="flex items-start gap-2.5 min-w-0">
+        <AlertTriangle
+          size={14}
+          className="text-amber-400/80 flex-shrink-0 mt-0.5"
+        />
+        <div>
+          <p
+            className="text-[15px] font-semibold text-amber-200 leading-tight mb-0.5"
+            data-testid="blocker-title"
+          >
+            Prepare is blocked
+          </p>
+          <p
+            className="text-xs text-slate-400"
+            data-testid="blocker-message"
+          >
+            Approve Intake before compile can run.
+          </p>
+        </div>
+      </div>
+
+      <Button
+        data-testid="return-to-intake-btn"
+        size="sm"
+        variant="outline"
+        onClick={onReturnToIntake}
+        className="border-amber-700/40 text-amber-400/90 hover:bg-amber-950/30 hover:text-amber-300 hover:border-amber-600/60 text-[11px] h-7 px-3 rounded-sm flex-shrink-0 bg-transparent shadow-none gap-1.5 font-medium"
       >
-        Prepare is blocked
-      </p>
-      <p
-        className="text-xs text-amber-400/70"
-        data-testid="blocker-message"
-      >
-        Approve Intake before compile can run.
-      </p>
+        Return to Intake Review
+        <ArrowRight size={11} />
+      </Button>
     </div>
-    <Button
-      data-testid="return-to-intake-btn"
-      size="sm"
-      variant="outline"
-      onClick={onReturnToIntake}
-      className="border-amber-700/50 text-amber-400 hover:bg-amber-950/30 hover:text-amber-300 hover:border-amber-600 text-xs h-7 px-3 rounded-sm flex-shrink-0 bg-transparent shadow-none"
-    >
-      Return to Intake Review
-    </Button>
   </div>
 );
 
 /* ─────────────────────────────────────────────────────
    Pipeline step row
+   — active (blocked) step: expanded with helper text
+   — waiting steps: muted, no badge pill
+   — na step: very muted, inline note
 ───────────────────────────────────────────────────── */
 const PipelineStep = ({ step, status, isLast }) => {
   const cfg = getStepConfig(status);
   const { Icon } = cfg;
+  const isBlocked = status === "blocked";
+  const isNA = status === "na";
 
   return (
     <div
       data-testid={`pipeline-step-${step.id}`}
-      className={`flex items-center gap-3 px-4 py-2.5 ${
-        !isLast ? "border-b border-[#1e1e1e]" : ""
-      }`}
+      className={`flex items-start gap-3 px-4 ${
+        isBlocked ? "py-3 bg-amber-950/5" : "py-2"
+      } ${!isLast ? "border-b border-[#1a1a1a]" : ""} transition-colors`}
     >
-      <Icon size={14} className={`${cfg.iconCls} flex-shrink-0`} />
-      <div className="flex flex-1 items-center justify-between gap-4 min-w-0">
-        <span className={`text-sm leading-tight ${cfg.nameCls}`}>
-          {step.label}
-        </span>
-        <span
-          className={`text-[10px] font-mono px-1.5 py-0.5 rounded-sm flex-shrink-0 whitespace-nowrap ${cfg.badgeCls}`}
-        >
-          {cfg.badge || step.waitingLabel}
-        </span>
+      {/* Icon */}
+      <Icon
+        size={isBlocked ? 14 : 13}
+        className={`${cfg.iconCls} flex-shrink-0 mt-[3px]`}
+      />
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <span className={`leading-tight ${isBlocked ? "text-[13px]" : "text-xs"} ${cfg.nameCls}`}>
+            {step.label}
+          </span>
+
+          {/* Badge: only for blocked and success */}
+          {cfg.badge && (
+            <span
+              className={`text-[10px] font-mono px-1.5 py-0.5 rounded-sm flex-shrink-0 whitespace-nowrap ${cfg.badgeCls}`}
+            >
+              {cfg.badge}
+            </span>
+          )}
+
+          {/* N/A inline indicator */}
+          {isNA && (
+            <span className="text-[10px] font-mono text-slate-800 flex-shrink-0">
+              n/a
+            </span>
+          )}
+        </div>
+
+        {/* Helper text for active blocked step only */}
+        {isBlocked && step.helperText && (
+          <p className="text-[11px] text-amber-600/50 font-mono mt-1 leading-snug">
+            {step.helperText}
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
 /* ─────────────────────────────────────────────────────
-   Main exported component
+   Section label (main pane)
+───────────────────────────────────────────────────── */
+const SectionLabel = ({ children }) => (
+  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600 mb-2">
+    {children}
+  </p>
+);
+
+/* ─────────────────────────────────────────────────────
+   Main export
 ───────────────────────────────────────────────────── */
 
 /**
  * CompileRenderPage — Drop-in Relay Prepare stage component.
  *
  * Props:
- *   runState            – e.g. "intake_needs_review"
- *   packetId            – e.g. "packet-99"
- *   repo                – e.g. "relay"
- *   branch              – e.g. "main"
- *   worktree            – e.g. "default"
- *   executionProfile    – e.g. "opencode_go"
- *   targetModel         – e.g. "deepseek-v4-flash"
- *   compileStatus       – "blocked" | "pending" | "running" | "success" | "failed"
+ *   runState               – e.g. "intake_needs_review"
+ *   packetId               – e.g. "packet-99"
+ *   repo / branch / worktree
+ *   executionProfile       – e.g. "opencode_go"
+ *   targetModel            – e.g. "deepseek-v4-flash"
+ *   compileStatus          – "blocked" | "pending" | "running" | "success" | "failed"
  *   packetValidationStatus – "waiting" | "running" | "passed" | "failed"
- *   repairStatus        – "na" | "waiting" | "running" | "success" | "failed"
- *   briefStatus         – "waiting" | "running" | "generated" | "failed"
- *   briefValidationStatus – "waiting" | "running" | "passed" | "failed"
- *   approvalStatus      – "waiting" | "approved" | "rejected"
- *   artifacts           – array of { path: string }
- *   onReturnToIntake    – () => void
+ *   repairStatus           – "na" | "waiting" | "running" | "success" | "failed"
+ *   briefStatus            – "waiting" | "running" | "generated" | "failed"
+ *   briefValidationStatus  – "waiting" | "running" | "passed" | "failed"
+ *   approvalStatus         – "waiting" | "approved" | "rejected"
+ *   artifacts              – Array<{ path: string }>
+ *   onReturnToIntake       – () => void
  */
 export default function CompileRenderPage({
   runState = "intake_needs_review",
@@ -251,7 +294,7 @@ export default function CompileRenderPage({
       title: "Run State",
       rows: [
         { label: "Status",           value: runState,          valueCls: "text-amber-400" },
-        { label: "Active step",      value: "—",               valueCls: "text-slate-600" },
+        { label: "Active step",      value: "—",               valueCls: "text-slate-700" },
         { label: "Executor adapter", value: executionProfile,  valueCls: "text-slate-400" },
         { label: "Selected model",   value: targetModel,       valueCls: "text-slate-400" },
       ],
@@ -259,9 +302,9 @@ export default function CompileRenderPage({
     {
       title: "Compiled Packet",
       rows: [
-        { label: "Canonical packet",  value: "Not generated",       valueCls: "text-slate-600" },
-        { label: "Validation status", value: "Waiting on compile",  valueCls: "text-slate-600" },
-        { label: "Validation report", value: "Waiting on compile",  valueCls: "text-slate-600" },
+        { label: "Canonical packet",  value: "Not generated",      valueCls: "text-slate-600" },
+        { label: "Validation status", value: "Waiting on compile", valueCls: "text-slate-600" },
+        { label: "Validation report", value: "Waiting on compile", valueCls: "text-slate-600" },
       ],
     },
     {
@@ -274,9 +317,9 @@ export default function CompileRenderPage({
     {
       title: "Executor Brief",
       rows: [
-        { label: "Brief artifact",    value: "Not generated",              valueCls: "text-slate-600" },
-        { label: "Validation status", value: "Waiting on rendered brief",  valueCls: "text-slate-600" },
-        { label: "Validation report", value: "Waiting on rendered brief",  valueCls: "text-slate-600" },
+        { label: "Brief artifact",    value: "Not generated",             valueCls: "text-slate-600" },
+        { label: "Validation status", value: "Waiting on rendered brief", valueCls: "text-slate-600" },
+        { label: "Validation report", value: "Waiting on rendered brief", valueCls: "text-slate-600" },
       ],
     },
     {
@@ -293,40 +336,45 @@ export default function CompileRenderPage({
       className="flex flex-1 min-h-0 overflow-hidden"
       data-testid="compile-render-page"
     >
-      {/* ── Main content pane ── */}
+      {/* ─────────────────────────────────────────────
+          Main content pane
+      ───────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto min-w-0">
-        <div className="p-6 space-y-6 max-w-3xl">
+        <div className="px-6 pt-5 pb-8 space-y-5 max-w-3xl">
 
-          {/* Stage header */}
-          <div className="flex items-start justify-between">
-            <div>
+          {/* ── Stage header ──────────────────────── */}
+          <div>
+            {/* Title + inline state badge */}
+            <div className="flex items-center gap-2.5 mb-1.5">
               <h2
                 className="text-base font-semibold text-slate-100 tracking-tight"
                 data-testid="stage-heading"
               >
                 Compile / Render
               </h2>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">
-                Compile the canonical packet, validate it, render the executor
-                brief, and approve the run for execution.
-              </p>
+              <span
+                data-testid="stage-run-state-badge"
+                className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-500/80 border border-amber-700/30 rounded-sm whitespace-nowrap"
+              >
+                {runState}
+              </span>
             </div>
-            <span
-              data-testid="stage-run-state-badge"
-              className="text-[10px] font-mono font-semibold px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-700/40 rounded-sm flex-shrink-0 ml-4 whitespace-nowrap"
-            >
-              {runState}
-            </span>
+            {/* Subtitle */}
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Compile the canonical packet, validate it, render the executor
+              brief, and approve for execution.
+            </p>
           </div>
 
-          {/* Blocker card */}
+          {/* ── Blocker card ──────────────────────── */}
           <BlockerCard onReturnToIntake={onReturnToIntake} />
 
-          {/* Pipeline stepper */}
+          {/* ── Pipeline ──────────────────────────── */}
           <div>
             <SectionLabel>Pipeline</SectionLabel>
+            {/* No outer border — dividers only between steps */}
             <div
-              className="border border-[#252525] rounded-sm overflow-hidden"
+              className="divide-y divide-[#1a1a1a]"
               data-testid="pipeline-container"
             >
               {PIPELINE_STEPS.map((step, i) => (
@@ -340,28 +388,40 @@ export default function CompileRenderPage({
             </div>
           </div>
 
-          {/* Artifacts */}
+          {/* ── Generated Artifacts ───────────────── */}
           <div>
             <SectionLabel>Generated Artifacts</SectionLabel>
             {artifacts.length === 0 ? (
               <div
                 data-testid="artifacts-empty-state"
-                className="border border-dashed border-[#2a2a2a] rounded-sm flex flex-col items-center justify-center py-10 text-center"
+                className="flex items-start gap-3 px-4 py-3 border border-[#1e1e1e] rounded-sm"
               >
-                <FileCode size={18} className="text-slate-700 mb-2.5" />
-                <p className="text-xs text-slate-600">
-                  No prepare artifacts generated yet.
-                </p>
+                <FileCode
+                  size={13}
+                  className="text-slate-700 flex-shrink-0 mt-0.5"
+                />
+                <div>
+                  <p className="text-xs text-slate-600 leading-snug">
+                    No prepare artifacts generated yet.
+                  </p>
+                  <p className="text-[11px] text-slate-700 mt-0.5 leading-snug">
+                    Compile output, validation reports, and executor briefs will
+                    appear here.
+                  </p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="divide-y divide-[#1a1a1a] border border-[#1e1e1e] rounded-sm overflow-hidden">
                 {artifacts.map((artifact, i) => (
                   <div
                     key={i}
                     data-testid={`artifact-item-${i}`}
-                    className="flex items-center gap-2 p-2 border border-[#252525] rounded-sm"
+                    className="flex items-center gap-2 px-3 py-2"
                   >
-                    <FileCode size={11} className="text-slate-600 flex-shrink-0" />
+                    <FileCode
+                      size={11}
+                      className="text-slate-600 flex-shrink-0"
+                    />
                     <span className="text-xs font-mono text-slate-400 truncate">
                       {artifact.path}
                     </span>
@@ -374,9 +434,11 @@ export default function CompileRenderPage({
         </div>
       </div>
 
-      {/* ── Right Inspector panel ── */}
+      {/* ─────────────────────────────────────────────
+          Right Inspector panel
+      ───────────────────────────────────────────── */}
       <div
-        className="w-72 border-l border-[#222] bg-[#0c0c0c] flex flex-col flex-shrink-0 overflow-hidden"
+        className="w-72 border-l border-[#1e1e1e] bg-[#0b0b0b] flex flex-col flex-shrink-0 overflow-hidden"
         data-testid="inspector-panel"
       >
         <Tabs
@@ -387,21 +449,21 @@ export default function CompileRenderPage({
           {/* Tab strip */}
           <TabsList
             data-testid="inspector-tabs-list"
-            className="flex h-auto bg-transparent rounded-none border-b border-[#222] p-0 flex-shrink-0"
+            className="flex h-auto bg-transparent rounded-none border-b border-[#1e1e1e] p-0 flex-shrink-0"
           >
             {["details", "artifacts", "validation", "logs"].map((t) => (
               <TabsTrigger
                 key={t}
                 value={t}
                 data-testid={`inspector-tab-${t}`}
-                className="flex-1 rounded-none h-auto py-2.5 px-1 text-[10px] uppercase tracking-wider font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-300 data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent data-[state=active]:shadow-none shadow-none bg-transparent transition-colors"
+                className="flex-1 rounded-none h-auto py-2.5 px-1 text-[10px] uppercase tracking-wider font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-300 data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent data-[state=active]:shadow-none shadow-none bg-transparent transition-colors"
               >
                 {t}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {/* Tab content */}
+          {/* Content */}
           <div className="flex-1 overflow-y-auto">
 
             <TabsContent
@@ -423,7 +485,7 @@ export default function CompileRenderPage({
               className="mt-0 p-4"
               data-testid="inspector-artifacts-content"
             >
-              <p className="text-xs text-slate-600 text-center py-8">
+              <p className="text-[11px] font-mono text-slate-700 text-center py-10">
                 No artifacts generated yet.
               </p>
             </TabsContent>
@@ -433,10 +495,12 @@ export default function CompileRenderPage({
               className="mt-0 p-4"
               data-testid="inspector-validation-content"
             >
-              <p className="text-xs text-slate-600 text-center py-8">
+              <p className="text-[11px] text-slate-600 text-center py-10 leading-relaxed">
                 No validation data available.
                 <br />
-                <span className="font-mono">Compile must run first.</span>
+                <span className="font-mono text-slate-700">
+                  Compile must run first.
+                </span>
               </p>
             </TabsContent>
 
@@ -445,7 +509,7 @@ export default function CompileRenderPage({
               className="mt-0 p-4"
               data-testid="inspector-logs-content"
             >
-              <p className="text-xs font-mono text-slate-700 text-center py-8">
+              <p className="text-[11px] font-mono text-slate-700 text-center py-10">
                 No logs available yet.
               </p>
             </TabsContent>
