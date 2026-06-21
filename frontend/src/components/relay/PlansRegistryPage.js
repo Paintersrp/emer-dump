@@ -445,6 +445,7 @@ function EmptyState({ onViewRuns }) {
           <div className="flex items-center gap-2 mt-0.5">
             <button
               data-testid="empty-new-plan-btn"
+              onClick={() => navigate('/plans/new')}
               className="flex items-center gap-1.5 text-xs text-blue-400 px-3 py-1.5 border border-blue-700/40 rounded-sm hover:border-blue-500/60 hover:text-blue-300 bg-blue-950/30 transition-colors"
             >
               <Plus size={10} />
@@ -513,6 +514,7 @@ export default function PlansRegistryPage({
           </button>
           <button
             data-testid="nav-new-plan-btn"
+            onClick={() => navigate('/plans/new')}
             className="text-xs text-blue-400 px-3 py-1.5 border border-blue-800/50 rounded-sm hover:border-blue-600/60 hover:text-blue-300 bg-blue-950/30 transition-colors flex items-center gap-1.5"
           >
             <Plus size={10} />
@@ -560,6 +562,7 @@ export default function PlansRegistryPage({
 
           <button
             data-testid="new-plan-header-btn"
+            onClick={() => navigate('/plans/new')}
             className="flex items-center gap-1.5 text-xs text-blue-400 px-3 py-1.5 border border-blue-800/50 rounded-sm hover:border-blue-600/60 hover:text-blue-300 bg-blue-950/30 transition-colors mt-0.5 flex-shrink-0"
           >
             <Plus size={10} />

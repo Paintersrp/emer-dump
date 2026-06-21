@@ -8,6 +8,7 @@ import AuditPage from "@/components/relay/AuditPage";
 import RunsRegistryPage from "@/components/relay/RunsRegistryPage";
 import PlansRegistryPage from "@/components/relay/PlansRegistryPage";
 import PlanDetailPage from "@/components/relay/PlanDetailPage";
+import NewPlanPage from "@/components/relay/NewPlanPage";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -497,6 +498,14 @@ function RelayShell({ activeStageId, children }) {
 }
 
 /* ─────────────────────────────────────────────────────
+   Route: New Plan
+───────────────────────────────────────────────────── */
+function NewPlanRoute() {
+  const navigate = useNavigate();
+  return <NewPlanPage onBack={() => navigate("/plans")} />;
+}
+
+/* ─────────────────────────────────────────────────────
    Route: Plans Registry
 ───────────────────────────────────────────────────── */
 function PlansRoute() {
@@ -614,6 +623,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/plans/new" element={<NewPlanRoute />} />
         <Route path="/plans"   element={<PlansRoute />} />
         <Route path="/plans/:planId" element={<PlanDetailRoute />} />
         <Route path="/runs"   element={<RunsRoute />} />

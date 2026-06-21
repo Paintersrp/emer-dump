@@ -160,6 +160,33 @@ onProceedToAudit: () => void
 - All interactive elements have data-testid attributes
 - Test coverage: 100% (iteration_7) — 50 tests across all filter states and all plan statuses
 
+### NewPlanPage.js (Feb 2026)
+- **Purpose**: Two-pane form for validating and submitting a reviewed Plan of Passes JSON artifact
+- **Route**: `/plans/new`
+- **Critical rule**: Accepts Plan of Passes JSON only (not Planner handoff Markdown); explicitly states no runs created, no executor dispatched
+- **Structure**:
+  - Top nav: Relay branding + Plans (active) + Runs — consistent with all registry pages
+  - Page header: breadcrumb (← Plans · New Plan) + "New Plan" title + dynamic status badge + subtitle
+  - Notice bar: amber left accent + TriangleAlert icon + "Submitting creates plan and pass records only. No runs are created. No executor is dispatched."
+  - Left pane (500px fixed): section label + helper text + monospace JSON textarea (fills height) + char count / status microbar + Validate Plan + Clear buttons + Submit Reviewed Plan button + disclaimer copy
+  - Right pane (flex-1): sticky section header (label changes by state) + state dot indicator + scrollable state-based content
+- **Form state machine**: `draft` → `validating` → `validated` | `validation_failed` | `conflict` → `submitting` → `submitted`
+- **Status badge**: tracks state (Draft → Validating → Validated / Validation Failed / Conflict → Submitting → Submitted)
+- **Right-pane states**:
+  - `draft` (no input): empty state "Paste a Plan of Passes JSON artifact to begin."
+  - `draft` (has input): "Run validation to inspect and submit this plan."
+  - `validating`: spinner
+  - `validated`: "Plan JSON is valid" header + plan preview table (title, planId copyable, goal, repo/branch, artifact, intent, pass count) + derived pass list (seq, name, passId, Planned badge, goal, dep pills)
+  - `validation_failed`: "Validation failed" + structured error list (path + message + code per error)
+  - `conflict`: amber left-accent card "CONFLICT / Plan ID already exists" with conflicting planId in amber monospace
+  - `submitting`: spinner
+  - `submitted`: emerald left-accent card "PLAN SUBMITTED / Plan and pass records created" + summary table + Open Plan + View Plans buttons
+- **Actions**: Validate (enabled when input exists); Clear (resets all state); Submit (enabled only when validated)
+- **Client-side mock validation**: parse JSON, check required fields (planId, title, passes), validate each pass (passId, name), "plan-already-exists" triggers conflict
+- **Navigation**: Plans Registry → New Plan via 3 buttons (nav, header, empty-state); submitted Open Plan → /plans/:planId; View Plans → /plans
+- All interactive elements have data-testid attributes
+- Test coverage: Screenshot verified all 5 states (draft, validated, validation_failed, conflict, submitted) plus navigation
+
 ### PlanDetailPage.js (Refined — Feb 2026)
 - **Purpose**: Single plan detail view for plan orchestration, showing all passes in order with dependencies and status
 - **Route**: `/plans/:planId`
