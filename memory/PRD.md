@@ -41,6 +41,14 @@ artifacts: [{ path: string }]
 onReturnToIntake: () => void
 ```
 
+## Refinement Pass (June 21, 2026)
+- Stage header: badge integrated inline next to title (no longer floated far right)
+- Blocker card: left-accent border, "CURRENT BLOCKER" eyebrow, larger dominant title, arrow CTA button
+- Pipeline: active blocked step expanded with helper text; waiting steps stripped of "Waiting on X" pills — muted icon/label communicates state; Repair shows subtle "n/a" indicator
+- Artifacts empty state: compact horizontal row with subtext (removed oversized centered box)
+- Inspector: section headers now have separator lines for clear hierarchy; KV spacing improved
+- Overall: fewer heavy borders, pipeline uses divide-y only (no outer box), reduced noise
+
 ## Prioritized Backlog
 ### P0 — Complete
 - [x] Blocked state layout with dominant blocker card
