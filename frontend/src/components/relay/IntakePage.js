@@ -399,6 +399,59 @@ const AdapterSelect = ({ label, value, options, onChange, sourceLabel, readOnly 
   </div>
 );
 
+const PASS_STATUS_STYLES = {
+  planned: "bg-slate-500/10 text-slate-400 border border-slate-700/40",
+  in_progress: "bg-cyan-500/10 text-cyan-400 border border-cyan-700/40",
+  completed: "bg-emerald-500/10 text-emerald-400 border border-emerald-700/40",
+  skipped: "bg-amber-500/10 text-amber-400 border border-amber-700/40",
+};
+
+const formatAssociationLabel = (value) =>
+  value ? value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Unavailable";
+
+const AssociationInput = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  disabled = false,
+  invalid = false,
+  helperText = null,
+}) => (
+  <div>
+    <p className="text-[10px] text-slate-600 mb-1.5 uppercase tracking-wide">{label}</p>
+    <input
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={`w-full bg-[#0f0f0f] border text-slate-200 text-[11px] font-mono px-2.5 py-1.5 rounded-sm
+        focus:outline-none transition-colors ${
+          invalid
+            ? "border-red-700/70 text-red-200 placeholder:text-red-900/70 focus:border-red-600/80"
+            : disabled
+            ? "border-[#1d1d1d] text-slate-600 placeholder:text-slate-800 cursor-not-allowed"
+            : "border-[#2a2a2a] hover:border-[#333] focus:border-[#3d3d3d]"
+        }`}
+    />
+    {helperText && (
+      <p className={`mt-1 text-[10px] font-mono leading-snug ${invalid ? "text-red-400/80" : "text-slate-700"}`}>
+        {helperText}
+      </p>
+    )}
+  </div>
+);
+
+const AssociationStatusPill = ({ status }) => {
+  const cls = PASS_STATUS_STYLES[status] || "bg-slate-500/10 text-slate-500 border border-slate-700/30";
+
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-mono ${cls}`}>
+      {formatAssociationLabel(status)}
+    </span>
+  );
+};
+
 /* ─────────────────────────────────────────────────────
    Current-state card (adapts to intakeStatus)
 ───────────────────────────────────────────────────── */
@@ -409,6 +462,10 @@ const StateCard = ({
   onNeedsRevision,
   onBlockRun,
   onProceedToCompileRender,
+  approveLabel = "Approve Intake",
+  approveDisabled = false,
+  actionNotice = null,
+  showSecondaryActions = true,
 }) => {
   const cfg = STATE_CONFIG[intakeStatus] || STATE_CONFIG.blocked;
   const { Icon } = cfg;
@@ -467,27 +524,41 @@ const StateCard = ({
             data-testid="approve-intake-btn"
             size="sm"
             onClick={onApprove}
-            className="bg-green-600/15 border border-green-600/40 text-green-300 hover:bg-green-600/25 hover:text-green-200 hover:border-green-500/60 text-[11px] h-7 px-3 rounded-sm shadow-none gap-1.5 font-medium"
+            disabled={approveDisabled}
+            className={`text-[11px] h-7 px-3 rounded-sm shadow-none gap-1.5 font-medium ${
+              approveDisabled
+                ? "bg-green-600/10 border border-green-900/40 text-green-500/40 cursor-not-allowed"
+                : "bg-green-600/15 border border-green-600/40 text-green-300 hover:bg-green-600/25 hover:text-green-200 hover:border-green-500/60"
+            }`}
           >
-            Approve Intake
+            {approveLabel}
           </Button>
-          <Button
-            data-testid="needs-revision-btn"
-            size="sm"
-            onClick={onNeedsRevision}
-            className="bg-amber-600/10 border border-amber-600/40 text-amber-300 hover:bg-amber-600/20 hover:text-amber-200 hover:border-amber-500/60 text-[11px] h-7 px-3 rounded-sm shadow-none gap-1.5 font-medium"
-          >
-            Needs Revision
-          </Button>
-          <Button
-            data-testid="block-run-btn"
-            size="sm"
-            variant="outline"
-            onClick={onBlockRun}
-            className="border-red-800/40 text-red-400/80 hover:bg-red-950/20 hover:text-red-300 hover:border-red-700/60 text-[11px] h-7 px-3 rounded-sm bg-transparent shadow-none gap-1.5 font-medium"
-          >
-            Block Run
-          </Button>
+          {showSecondaryActions && (
+            <>
+              <Button
+                data-testid="needs-revision-btn"
+                size="sm"
+                onClick={onNeedsRevision}
+                className="bg-amber-600/10 border border-amber-600/40 text-amber-300 hover:bg-amber-600/20 hover:text-amber-200 hover:border-amber-500/60 text-[11px] h-7 px-3 rounded-sm shadow-none gap-1.5 font-medium"
+              >
+                Needs Revision
+              </Button>
+              <Button
+                data-testid="block-run-btn"
+                size="sm"
+                variant="outline"
+                onClick={onBlockRun}
+                className="border-red-800/40 text-red-400/80 hover:bg-red-950/20 hover:text-red-300 hover:border-red-700/60 text-[11px] h-7 px-3 rounded-sm bg-transparent shadow-none gap-1.5 font-medium"
+              >
+                Block Run
+              </Button>
+            </>
+          )}
+          {actionNotice && (
+            <p className="basis-full text-[11px] text-red-400/80 leading-snug">
+              {actionNotice}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -578,6 +649,14 @@ const formatRunState = (s) =>
  *   onProceedToCompileRender – () => void
  */
 export default function IntakePage({
+  pageMode = "intake",
+  pageTitle = "Intake",
+  pageDescription = "Review the Planner handoff, confirm run configuration, and approve the run for Compile / Render.",
+  showPlanAssociation = false,
+  primaryActionLabel = "Approve Intake",
+  showSecondaryActions = true,
+  initialAssociation = null,
+  resolveAssociationContext = null,
   runState = "intake_needs_review",
   packetId = "packet-99",
   repo = "relay",
@@ -607,6 +686,13 @@ export default function IntakePage({
   onProceedToCompileRender = () => {},
 }) {
   const [tab, setTab] = useState("details");
+  const isNewRunPage = pageMode === "new_run";
+  const initialPlanId = initialAssociation?.planId?.trim?.() || "";
+  const initialPassId = initialAssociation?.passId?.trim?.() || "";
+  const [associationOpen, setAssociationOpen] = useState(Boolean(initialPlanId || initialPassId));
+  const [associationEnabled, setAssociationEnabled] = useState(Boolean(initialPlanId || initialPassId));
+  const [planIdInput, setPlanIdInput] = useState(initialPlanId);
+  const [passIdInput, setPassIdInput] = useState(initialPassId);
 
   /* Adapter / model are locally controlled — allow override during review */
   const [selectedAdapter, setSelectedAdapter] = useState(
@@ -618,11 +704,48 @@ export default function IntakePage({
 
   const adapterModels = EXECUTOR_ADAPTERS[selectedAdapter]?.models || [];
   const isReviewable = intakeStatus === "intake_needs_review";
+  const normalizedPlanId = planIdInput.trim();
+  const normalizedPassId = passIdInput.trim();
+  const associationError =
+    showPlanAssociation && associationEnabled && normalizedPassId && !normalizedPlanId
+      ? "passId cannot be submitted without planId. Clear passId or supply a plan first."
+      : null;
+  const associationContext =
+    showPlanAssociation && associationEnabled && typeof resolveAssociationContext === "function"
+      ? resolveAssociationContext(normalizedPlanId, normalizedPassId)
+      : {
+          plan: null,
+          pass: null,
+          hasPlanLookup: Boolean(normalizedPlanId),
+          hasPassLookup: Boolean(normalizedPassId),
+        };
+  const associationPlan = associationContext?.plan || null;
+  const associationPass = associationContext?.pass || null;
+  const associationModeLabel =
+    associationEnabled && normalizedPlanId
+      ? normalizedPassId
+        ? "Plan + pass association"
+        : "Plan association"
+      : "Standalone run";
+  const submissionPayload = {
+    repo,
+    branch,
+    worktree,
+    executionProfile: selectedAdapter,
+    targetModel: selectedModel,
+    ...(showPlanAssociation && associationEnabled && normalizedPlanId ? { planId: normalizedPlanId } : {}),
+    ...(showPlanAssociation && associationEnabled && normalizedPlanId && normalizedPassId ? { passId: normalizedPassId } : {}),
+  };
 
   const handleAdapterChange = (newAdapter) => {
     setSelectedAdapter(newAdapter);
     const firstModel = EXECUTOR_ADAPTERS[newAdapter]?.models[0]?.id;
     if (firstModel) setSelectedModel(firstModel);
+  };
+
+  const handleApprove = () => {
+    if (associationError) return;
+    onApprove(submissionPayload);
   };
 
   const pipelineStatuses = getIntakePipelineStatuses(intakeStatus);
@@ -700,6 +823,81 @@ export default function IntakePage({
         { label: "Execution profile", value: selectedAdapter, valueCls: "text-slate-400" },
       ],
     },
+    ...(showPlanAssociation
+      ? [
+          {
+            title: "Association",
+            rows: [
+              {
+                label: "Mode",
+                value: associationModeLabel,
+                valueCls: associationError
+                  ? "text-red-400"
+                  : associationEnabled
+                  ? "text-cyan-400"
+                  : "text-slate-600",
+                mono: false,
+              },
+              ...(associationEnabled && normalizedPlanId
+                ? [
+                    {
+                      label: "Plan ID",
+                      value: normalizedPlanId,
+                      valueCls: associationPlan ? "text-slate-400" : "text-amber-400/80",
+                    },
+                    {
+                      label: "Plan",
+                      value: associationPlan?.title || "Plan details unavailable",
+                      valueCls: associationPlan ? "text-slate-300" : "text-amber-400/80",
+                      mono: false,
+                    },
+                  ]
+                : []),
+              ...(associationEnabled && normalizedPassId
+                ? [
+                    {
+                      label: "Pass ID",
+                      value: normalizedPassId,
+                      valueCls: associationPass ? "text-slate-400" : "text-amber-400/80",
+                    },
+                    {
+                      label: "Pass",
+                      value: associationPass?.name || "Pass details unavailable",
+                      valueCls: associationPass ? "text-slate-300" : "text-amber-400/80",
+                      mono: false,
+                    },
+                    {
+                      label: "Pass Status",
+                      value: associationPass?.status ? formatAssociationLabel(associationPass.status) : "Status unavailable",
+                      valueCls: associationPass?.status ? "text-cyan-400" : "text-amber-400/80",
+                      mono: false,
+                    },
+                  ]
+                : []),
+              ...(associationEnabled && associationPlan?.repo
+                ? [
+                    {
+                      label: "Repo / Branch",
+                      value: `${associationPlan.repo}${associationPlan.branch ? ` · ${associationPlan.branch}` : ""}`,
+                      valueCls: "text-slate-400",
+                      mono: false,
+                    },
+                  ]
+                : []),
+              ...(associationError
+                ? [
+                    {
+                      label: "Validation",
+                      value: associationError,
+                      valueCls: "text-red-400/80",
+                      mono: false,
+                    },
+                  ]
+                : []),
+            ],
+          },
+        ]
+      : []),
     {
       title: "Executor",
       rows: [
@@ -756,7 +954,7 @@ export default function IntakePage({
                 className="text-base font-semibold text-slate-100 tracking-tight"
                 data-testid="stage-heading"
               >
-                Intake
+                {pageTitle}
               </h2>
               <span
                 data-testid="stage-run-state-badge"
@@ -766,8 +964,7 @@ export default function IntakePage({
               </span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Review the Planner handoff, confirm run configuration, and approve
-              the run for Compile / Render.
+              {pageDescription}
             </p>
           </div>
 
@@ -775,10 +972,14 @@ export default function IntakePage({
           <StateCard
             intakeStatus={intakeStatus}
             blockingReason={blockingReason}
-            onApprove={onApprove}
+            onApprove={handleApprove}
             onNeedsRevision={onNeedsRevision}
             onBlockRun={onBlockRun}
             onProceedToCompileRender={onProceedToCompileRender}
+            approveLabel={primaryActionLabel}
+            approveDisabled={Boolean(associationError)}
+            actionNotice={associationError}
+            showSecondaryActions={showSecondaryActions}
           />
 
           {/* Intake pipeline */}
@@ -864,10 +1065,209 @@ export default function IntakePage({
                 {/* Description row */}
                 <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#0d0d0d]">
                   <p className="text-[11px] text-slate-500 leading-snug">
-                    Adjust execution target details before approving the intake.
+                    Adjust execution target details before {isNewRunPage ? "creating the run" : "approving the intake"}.
                     Provenance is shown inline with each control.
                   </p>
                 </div>
+
+                {showPlanAssociation && (
+                  <div className="border-b border-[#1a1a1a]">
+                    <button
+                      type="button"
+                      onClick={() => setAssociationOpen((open) => !open)}
+                      className="w-full px-4 py-3 flex items-start justify-between gap-3 text-left hover:bg-[#101010] transition-colors"
+                      data-testid="associate-plan-toggle"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[11px] font-medium text-slate-200">Associate with Plan</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm border border-[#2a2a2a] text-slate-500">
+                            Optional
+                          </span>
+                          {associationEnabled && (normalizedPlanId || normalizedPassId) && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm border border-cyan-800/40 bg-cyan-950/20 text-cyan-300">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className={`mt-1 text-[11px] leading-snug ${
+                          associationError
+                            ? "text-red-400/80"
+                            : associationEnabled
+                            ? "text-slate-400"
+                            : "text-slate-600"
+                        }`}>
+                          {associationEnabled
+                            ? normalizedPassId
+                              ? `Pass-associated run: ${normalizedPlanId || "plan?"} / ${normalizedPassId}`
+                              : normalizedPlanId
+                              ? `Plan-associated run: ${normalizedPlanId}`
+                              : "Association enabled. Supply a planId and optional passId."
+                            : "Standalone run (default). Expand to add managed plan/pass context."}
+                        </p>
+                      </div>
+                      <ChevronDown
+                        size={14}
+                        className={`mt-0.5 flex-shrink-0 transition-transform ${
+                          associationOpen ? "rotate-180 text-slate-400" : "text-slate-600"
+                        }`}
+                      />
+                    </button>
+
+                    {associationOpen && (
+                      <div
+                        className={`px-4 py-3 space-y-3 ${
+                          associationError
+                            ? "bg-red-950/10"
+                            : associationEnabled
+                            ? "bg-[#0d1014]"
+                            : "bg-[#0b0b0b]"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="min-w-0">
+                            <p className={`text-[11px] font-medium ${
+                              associationError
+                                ? "text-red-300"
+                                : associationEnabled
+                                ? "text-cyan-300"
+                                : "text-slate-500"
+                            }`}>
+                              {associationEnabled ? "Association enabled" : "Association inactive"}
+                            </p>
+                            <p className="mt-1 text-[11px] text-slate-500 leading-snug">
+                              Creating a run for a pass moves that pass to in progress.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setAssociationEnabled((enabled) => !enabled)}
+                            className={`text-[10px] font-mono px-2.5 py-1.5 rounded-sm border transition-colors ${
+                              associationEnabled
+                                ? "border-cyan-800/40 bg-cyan-950/20 text-cyan-300 hover:border-cyan-700/60"
+                                : "border-[#2a2a2a] text-slate-500 hover:border-[#3a3a3a] hover:text-slate-300"
+                            }`}
+                            data-testid="associate-plan-enable"
+                          >
+                            {associationEnabled ? "Use standalone run" : "Enable association"}
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                          <AssociationInput
+                            label="planId"
+                            value={planIdInput}
+                            onChange={setPlanIdInput}
+                            placeholder="plan-123"
+                            disabled={!associationEnabled}
+                            helperText={associationEnabled ? "Managed plan identifier." : "Association disabled."}
+                          />
+                          <AssociationInput
+                            label="passId"
+                            value={passIdInput}
+                            onChange={setPassIdInput}
+                            placeholder="pass-001"
+                            disabled={!associationEnabled}
+                            invalid={Boolean(associationError)}
+                            helperText={
+                              associationError
+                                ? "passId requires planId."
+                                : associationEnabled
+                                ? "Optional pass identifier within the selected plan."
+                                : "Association disabled."
+                            }
+                          />
+                        </div>
+
+                        {associationEnabled && (normalizedPlanId || normalizedPassId) && (
+                          <div
+                            className={`rounded-sm border overflow-hidden ${
+                              associationError
+                                ? "border-red-800/60 bg-red-950/10"
+                                : "border-cyan-900/40 bg-cyan-950/10"
+                            }`}
+                            data-testid="association-context-card"
+                          >
+                            <div className="px-3 py-2 border-b border-[#1d2430] flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                                  associationError ? "text-red-400/80" : "text-cyan-400/80"
+                                }`}>
+                                  Plan Context
+                                </p>
+                                <p className="text-[11px] text-slate-500 leading-snug">
+                                  {normalizedPassId
+                                    ? "Selected pass association preview."
+                                    : "Selected plan association preview."}
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm border border-amber-800/40 bg-amber-950/20 text-amber-300 whitespace-nowrap">
+                                {normalizedPassId ? "plan + pass" : "plan only"}
+                              </span>
+                            </div>
+
+                            <div className="px-3 py-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                              <div>
+                                <p className="text-[10px] text-slate-600 mb-0.5">Plan</p>
+                                <p className={`text-[11px] leading-snug ${
+                                  associationPlan ? "text-slate-200" : "text-amber-400/80"
+                                }`}>
+                                  {associationPlan?.title || "Plan details unavailable for provided planId."}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-slate-600 mb-0.5">planId</p>
+                                <p className="text-[11px] font-mono text-slate-300">
+                                  {normalizedPlanId || "Not provided"}
+                                </p>
+                              </div>
+
+                              {normalizedPassId && (
+                                <>
+                                  <div>
+                                    <p className="text-[10px] text-slate-600 mb-0.5">Pass</p>
+                                    <p className={`text-[11px] leading-snug ${
+                                      associationPass ? "text-slate-200" : "text-amber-400/80"
+                                    }`}>
+                                      {associationPass?.name || "Pass details unavailable for provided passId."}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-slate-600 mb-0.5">passId</p>
+                                    <p className="text-[11px] font-mono text-slate-300">
+                                      {normalizedPassId}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-slate-600 mb-0.5">Pass status</p>
+                                    {associationPass?.status ? (
+                                      <AssociationStatusPill status={associationPass.status} />
+                                    ) : (
+                                      <p className="text-[11px] text-amber-400/80">Status unavailable</p>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+
+                              <div className={normalizedPassId ? "" : "col-span-2"}>
+                                <p className="text-[10px] text-slate-600 mb-0.5">Repo / Branch</p>
+                                <p className={`text-[11px] leading-snug ${
+                                  associationPlan?.repo || associationPlan?.branch
+                                    ? "text-slate-300"
+                                    : "text-amber-400/80"
+                                }`}>
+                                  {associationPlan?.repo || associationPlan?.branch
+                                    ? `${associationPlan?.repo || "repo unavailable"} / ${associationPlan?.branch || "branch unavailable"}`
+                                    : "Repository and branch unavailable for supplied IDs."}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Adapter + model selectors */}
                 <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-4 border-b border-[#1a1a1a]">

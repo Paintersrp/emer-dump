@@ -1,4 +1,5 @@
 import "@/App.css";
+import React from "react";
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import IntakePage from "@/components/relay/IntakePage";
@@ -188,6 +189,32 @@ function getMockPlan(planId) {
 function getMockRunPath(runId) {
   const allRuns = Object.values(MOCK_PASS_RUNS).flat();
   return allRuns.find((run) => run.runId === runId)?.path || "/intake";
+}
+
+function buildNewRunPath(planId, passId) {
+  const params = new URLSearchParams();
+
+  if (planId) params.set("planId", planId);
+  if (passId) params.set("passId", passId);
+
+  const query = params.toString();
+  return query ? `/runs/new?${query}` : "/runs/new";
+}
+
+function getPlanAssociationContext(planId, passId) {
+  const normalizedPlanId = planId?.trim() || "";
+  const normalizedPassId = passId?.trim() || "";
+  const plan = normalizedPlanId ? getMockPlan(normalizedPlanId) : null;
+  const pass = plan && normalizedPassId
+    ? plan.passes?.find((entry) => entry.passId === normalizedPassId) || null
+    : null;
+
+  return {
+    plan,
+    pass,
+    hasPlanLookup: Boolean(normalizedPlanId),
+    hasPassLookup: Boolean(normalizedPassId),
+  };
 }
 
 /* ─────────────────────────────────────────────────────
@@ -475,7 +502,16 @@ const AUDIT_MOCKS = {
 /* ─────────────────────────────────────────────────────
    Relay demo shell — shared chrome wrapper
 ───────────────────────────────────────────────────── */
-function RelayShell({ activeStageId, children }) {
+function RelayShell({
+  activeStageId,
+  children,
+  headerTitle = "Planner Handoff: Managed Planner Pass Plan Contract",
+  headerStatusLabel = "Intake Review",
+  headerMeta = "opencode_go · Updated 5 hours ago",
+  headerBreadcrumb = ["99", MOCK_RUN.packetId, MOCK_RUN.repo, MOCK_RUN.branch],
+  backLabel = "Runs",
+  backPath = "/runs",
+}) {
   const navigate = useNavigate();
 
   return (
@@ -511,6 +547,7 @@ function RelayShell({ activeStageId, children }) {
           </button>
           <button
             data-testid="nav-new-run-btn"
+            onClick={() => navigate("/runs/new")}
             className="text-xs text-slate-400 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors flex items-center gap-1.5"
           >
             <Plus size={10} />
@@ -529,27 +566,28 @@ function RelayShell({ activeStageId, children }) {
           <div className="flex items-center gap-2 flex-wrap min-w-0">
             <button
               data-testid="back-to-runs-btn"
+              onClick={() => navigate(backPath)}
               className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0"
             >
               <ArrowLeft size={11} />
-              Runs
+              {backLabel}
             </button>
             <span className="text-slate-700 flex-shrink-0">·</span>
             <span
               className="text-sm font-medium text-slate-200 truncate"
               data-testid="run-title"
             >
-              Planner Handoff: Managed Planner Pass Plan Contract
+              {headerTitle}
             </span>
             <span
               data-testid="run-status-badge"
               className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-700/40 rounded-sm flex-shrink-0"
             >
-              Intake Review
+              {headerStatusLabel}
             </span>
           </div>
           <span className="text-[11px] text-slate-600 ml-4 flex-shrink-0 hidden sm:block">
-            opencode_go · Updated 5 hours ago
+            {headerMeta}
           </span>
         </div>
 
@@ -558,13 +596,12 @@ function RelayShell({ activeStageId, children }) {
           className="flex items-center gap-1.5 mb-3 text-[11px] font-mono text-slate-600"
           data-testid="breadcrumb"
         >
-          <span>99</span>
-          <span className="text-slate-700">·</span>
-          <span>{MOCK_RUN.packetId}</span>
-          <span className="text-slate-700">·</span>
-          <span>{MOCK_RUN.repo}</span>
-          <span className="text-slate-700">·</span>
-          <span>{MOCK_RUN.branch}</span>
+          {headerBreadcrumb.map((segment, index) => (
+            <React.Fragment key={`${segment}-${index}`}>
+              {index > 0 && <span className="text-slate-700">·</span>}
+              <span>{segment}</span>
+            </React.Fragment>
+          ))}
         </div>
 
         {/* Stage navigation — clickable between demo pages */}
@@ -626,7 +663,7 @@ function PlanDetailRoute() {
       plan={plan}
       onBack={() => navigate("/plans")}
       onNavigateToPass={(passId) => navigate(`/plans/${plan.planId}/passes/${passId}`)}
-      onCreateRun={(passId) => navigate(`/plans/${plan.planId}/passes/${passId}`)}
+      onCreateRun={(passId) => navigate(buildNewRunPath(plan.planId, passId))}
     />
   );
 }
@@ -651,7 +688,7 @@ function PassDetailRoute() {
       totalPasses={plan.totalPasses}
       onBack={() => navigate(`/plans/${plan.planId}`)}
       onOpenRun={(runId) => navigate(getMockRunPath(runId))}
-      onCreateRun={() => navigate("/intake")}
+      onCreateRun={() => navigate(buildNewRunPath(plan.planId, pass.passId))}
       onNavigateToDep={(dependencyPassId) => navigate(`/plans/${plan.planId}/passes/${dependencyPassId}`)}
     />
   );
@@ -662,6 +699,45 @@ function PassDetailRoute() {
 ───────────────────────────────────────────────────── */
 function RunsRoute() {
   return <RunsRegistryPage />;
+}
+
+/* ─────────────────────────────────────────────────────
+   Route: New Run
+───────────────────────────────────────────────────── */
+function NewRunRoute() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const planId = searchParams.get("planId") || "";
+  const passId = searchParams.get("passId") || "";
+
+  return (
+    <RelayShell
+      activeStageId="intake"
+      headerTitle="New Run"
+      headerStatusLabel={passId ? "Pass Context" : planId ? "Plan Context" : "Standalone Default"}
+      headerMeta={`${MOCK_RUN.repo} · ${MOCK_RUN.branch} · ${
+        passId ? "Managed pass association armed" : planId ? "Managed plan association armed" : "Standalone run creation"
+      }`}
+      headerBreadcrumb={["runs", "new", planId || "standalone", passId || "pending"]}
+    >
+      <IntakePage
+        {...MOCK_RUN}
+        {...INTAKE_MOCKS.intake_needs_review}
+        pageMode="new_run"
+        pageTitle="New Run"
+        pageDescription="Create a standalone Relay run or optionally associate it with a managed plan and pass."
+        showPlanAssociation
+        primaryActionLabel="Create Run"
+        showSecondaryActions={false}
+        initialAssociation={{ planId, passId }}
+        resolveAssociationContext={getPlanAssociationContext}
+        onApprove={(payload) => console.log("new run: create", payload)}
+        onNeedsRevision={() => console.log("new run: needs revision")}
+        onBlockRun={() => console.log("new run: block run")}
+        onProceedToCompileRender={() => navigate("/")}
+      />
+    </RelayShell>
+  );
 }
 
 /* ─────────────────────────────────────────────────────
@@ -756,6 +832,7 @@ function App() {
         <Route path="/plans"   element={<PlansRoute />} />
         <Route path="/plans/:planId/passes/:passId" element={<PassDetailRoute />} />
         <Route path="/plans/:planId" element={<PlanDetailRoute />} />
+        <Route path="/runs/new" element={<NewRunRoute />} />
         <Route path="/runs"   element={<RunsRoute />} />
         <Route path="/intake"  element={<IntakeRoute />} />
         <Route path="/"        element={<CompileRenderRoute />} />

@@ -377,6 +377,8 @@ function ErrorState({ onRetry }) {
    Empty state
 ───────────────────────────────────────────────────── */
 function EmptyState() {
+  const navigate = useNavigate();
+
   return (
     <tr>
       <td colSpan={7} className="px-6 py-20 text-center">
@@ -390,6 +392,7 @@ function EmptyState() {
           </div>
           <button
             data-testid="empty-new-run-btn"
+            onClick={() => navigate("/runs/new")}
             className="flex items-center gap-1.5 mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
           >
             <Plus size={11} />
@@ -450,6 +453,7 @@ export default function RunsRegistryPage({
           </button>
           <button
             data-testid="nav-new-run-btn"
+            onClick={() => navigate("/runs/new")}
             className="text-xs text-blue-400 px-3 py-1.5 border border-blue-800/50 rounded-sm hover:border-blue-600/60 hover:text-blue-300 bg-blue-950/30 transition-colors flex items-center gap-1.5"
           >
             <Plus size={10} />
@@ -495,6 +499,7 @@ export default function RunsRegistryPage({
 
           <button
             data-testid="new-run-header-btn"
+            onClick={() => navigate("/runs/new")}
             className="flex items-center gap-1.5 text-xs text-blue-400 px-3 py-1.5 border border-blue-800/50 rounded-sm hover:border-blue-600/60 hover:text-blue-300 bg-blue-950/30 transition-colors mt-0.5 flex-shrink-0"
           >
             <Plus size={10} />
