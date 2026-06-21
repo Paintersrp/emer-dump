@@ -6,6 +6,7 @@ import CompileRenderPage from "@/components/relay/CompileRenderPage";
 import ExecutePage from "@/components/relay/ExecutePage";
 import AuditPage from "@/components/relay/AuditPage";
 import RunsRegistryPage from "@/components/relay/RunsRegistryPage";
+import PlansRegistryPage from "@/components/relay/PlansRegistryPage";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -326,6 +327,13 @@ function RelayShell({ activeStageId, children }) {
         </div>
         <div className="flex items-center gap-2">
           <button
+            data-testid="nav-plans-btn"
+            onClick={() => navigate("/plans")}
+            className="text-xs text-slate-400 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors"
+          >
+            Plans
+          </button>
+          <button
             data-testid="nav-runs-btn"
             onClick={() => navigate("/runs")}
             className="text-xs text-slate-400 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors"
@@ -415,6 +423,13 @@ function RelayShell({ activeStageId, children }) {
       {children}
     </div>
   );
+}
+
+/* ─────────────────────────────────────────────────────
+   Route: Plans Registry
+───────────────────────────────────────────────────── */
+function PlansRoute() {
+  return <PlansRegistryPage />;
 }
 
 /* ─────────────────────────────────────────────────────
@@ -512,6 +527,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/plans"   element={<PlansRoute />} />
         <Route path="/runs"   element={<RunsRoute />} />
         <Route path="/intake"  element={<IntakeRoute />} />
         <Route path="/"        element={<CompileRenderRoute />} />

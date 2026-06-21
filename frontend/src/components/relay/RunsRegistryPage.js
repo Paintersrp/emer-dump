@@ -433,6 +433,13 @@ export default function RunsRegistryPage({
           <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            data-testid="nav-plans-btn"
+            onClick={() => navigate("/plans")}
+            className="text-xs text-slate-400 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors"
+          >
+            Plans
+          </button>
           {/* Active: Runs button looks selected on this page */}
           <button
             data-testid="nav-runs-btn"
