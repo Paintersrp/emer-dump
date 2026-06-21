@@ -141,6 +141,25 @@ onProceedToAudit: () => void
 
 - [x] RunsRegistryPage: full Runs Registry with 6 filters, 7-column table, status/attention pills, row navigation, loading/empty/error states
 
+### PlansRegistryPage.js (Completed — Feb 2026)
+- **8 mock plans** covering all statuses: active, completion_ready, complete, abandoned
+- Compact top nav: Plans (active), Runs, + New Plan (blue primary)
+- Page header: "Plans" / "Managed multi-pass orchestration plans" / summary row (N plans · N need attention ⚠)
+- 6 operational filter tabs (All, Active, Completion Ready, Needs Attention, Complete, Abandoned) — bottom-border underline style with monospace count badges
+- Table: 7 columns — Plan (title + compact meta: planId/repo/branch), Status, Progress (segmented bar + N/M count), Current/Next Pass (dot indicator + pass title), Updated, Attention, Chevron
+- PassProgressBar: 10-segment indicator; filled=bg-blue-500/65, empty=bg-slate-800; proportional scaling for >10 passes
+- CurrentPassCell: dot (blue=ready, animated-blue=running, red=blocked) + pass ID + pass title; "ALL COMPLETE" for complete plans; "—" for abandoned/completion_ready
+- StatusPill: Active=blue, Completion Ready=amber, Complete=emerald, Abandoned=muted gray
+- AttentionPill: TriangleAlert + label — "Next pass ready"(blue), "In progress"(blue), "Completion ready"(amber), "Blocked"(red), "No runs yet"(muted)
+- Row hierarchy: attention rows text-slate-100 (bright), non-attention rows text-slate-400 (calm)
+- Loading state: 5-row skeleton with animate-pulse matching column structure
+- Error state: compact banner + Retry CTA
+- Empty state: Inbox icon + "No managed plans yet" + context copy + "New Plan" + "View Runs" buttons
+- Table footer: "N plans · Showing N [of N]"
+- App.js: /plans route added, Plans button added to RelayShell nav (stage pages), RunsRegistryPage nav updated with Plans button
+- All interactive elements have data-testid attributes
+- Test coverage: 100% (iteration_7) — 50 tests across all filter states and all plan statuses
+
 ### P1 — Next
 - [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
 - [ ] CompileRenderPage: active/running compile state (progress indicator on compile step)
