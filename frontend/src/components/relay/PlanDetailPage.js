@@ -1,378 +1,566 @@
 import React from 'react';
-import { ArrowLeft, Copy, ExternalLink, PlayCircle, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Copy, ExternalLink, Plus, AlertCircle } from 'lucide-react';
 
-const PlanDetailPage = ({ plan, onBack, onNavigateToPass, onCreateRun }) => {
-  // Utility: Copy to clipboard
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
+/* ─────────────────────────────────────────────────────
+   Status configs
+───────────────────────────────────────────────────── */
+const PLAN_STATUS = {
+  active:           { label: 'Active',          cls: 'bg-blue-500/15 text-blue-400 border border-blue-600/30' },
+  completion_ready: { label: 'Completion Ready', cls: 'bg-amber-500/15 text-amber-400 border border-amber-600/30' },
+  complete:         { label: 'Complete',         cls: 'bg-emerald-500/15 text-emerald-400 border border-emerald-600/30' },
+  abandoned:        { label: 'Abandoned',        cls: 'bg-slate-500/10 text-slate-600 border border-slate-700/25' },
+};
 
-  // Determine plan state
-  const planState = plan.status || 'active';
+const PASS_STATUS = {
+  completed:   { label: 'Completed',   dotCls: 'bg-emerald-600',   badgeCls: 'bg-emerald-500/10 text-emerald-600 border border-emerald-800/30' },
+  in_progress: { label: 'In Progress', dotCls: 'bg-blue-400',      badgeCls: 'bg-blue-500/10 text-blue-400 border border-blue-600/30' },
+  planned:     { label: 'Planned',     dotCls: 'bg-slate-700',     badgeCls: 'bg-slate-500/10 text-slate-500 border border-slate-700/30' },
+  skipped:     { label: 'Skipped',     dotCls: 'bg-slate-800',     badgeCls: 'bg-slate-900 text-slate-700 border border-slate-800/50' },
+};
 
-  // Calculate progress metrics
-  const totalPasses = plan.passes?.length || 0;
-  const completedPasses = plan.passes?.filter(p => p.status === 'completed').length || 0;
-  const inProgressPasses = plan.passes?.filter(p => p.status === 'in_progress').length || 0;
-  const plannedPasses = plan.passes?.filter(p => p.status === 'planned').length || 0;
-  const skippedPasses = plan.passes?.filter(p => p.status === 'skipped').length || 0;
-  const completionReadyPasses = plan.passes?.filter(p => p.status === 'completion_ready').length || 0;
+const PLAN_CARD = {
+  active:           { eyebrow: 'PLAN ACTIVE',      eyebrowCls: 'text-blue-400',    accentCls: 'bg-blue-500' },
+  completion_ready: { eyebrow: 'COMPLETION READY', eyebrowCls: 'text-amber-400',   accentCls: 'bg-amber-400' },
+  complete:         { eyebrow: 'PLAN COMPLETE',    eyebrowCls: 'text-emerald-400', accentCls: 'bg-emerald-500' },
+  abandoned:        { eyebrow: 'PLAN ABANDONED',   eyebrowCls: 'text-slate-600',   accentCls: 'bg-slate-700' },
+};
 
-  // Find current/next pass
-  const currentPass = plan.passes?.find(p => p.status === 'in_progress');
-  const nextPass = plan.passes?.find(p => p.status === 'planned' && !p.blockedBy);
+/* ─────────────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────────────── */
+function copyText(text) {
+  navigator.clipboard.writeText(text);
+}
 
-  // Check if pass is blocked
-  const isPassBlocked = (pass) => {
-    if (!pass.dependencies || pass.dependencies.length === 0) return false;
-    return pass.dependencies.some(depId => {
-      const depPass = plan.passes?.find(p => p.passId === depId);
-      return depPass && depPass.status !== 'completed';
-    });
-  };
+function getBlockingDeps(pass, passes) {
+  if (!pass.dependencies?.length) return [];
+  return pass.dependencies
+    .map((id) => passes.find((p) => p.passId === id))
+    .filter((dep) => dep && dep.status !== 'completed');
+}
 
-  // Get blocking dependency
-  const getBlockingDependency = (pass) => {
-    if (!pass.dependencies) return null;
-    for (const depId of pass.dependencies) {
-      const depPass = plan.passes?.find(p => p.passId === depId);
-      if (depPass && depPass.status !== 'completed') {
-        return depPass;
-      }
-    }
-    return null;
-  };
+/* ─────────────────────────────────────────────────────
+   PassRow
+───────────────────────────────────────────────────── */
+function PassRow({ pass, index, passes, onNavigateToPass, onCreateRun }) {
+  const blockingDeps = getBlockingDeps(pass, passes);
+  const blocked      = blockingDeps.length > 0;
+  const isCurrent    = pass.status === 'in_progress';
+  const isCompleted  = pass.status === 'completed';
+  const isPlanned    = pass.status === 'planned';
+  const passStatusCfg = PASS_STATUS[pass.status] || PASS_STATUS.planned;
 
-  // Status badge color helper
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'active':
-        return 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20';
-      case 'completion_ready':
-        return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
-      case 'complete':
-        return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
-      case 'abandoned':
-        return 'text-zinc-500 bg-zinc-500/10 border-zinc-500/20';
-      default:
-        return 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20';
-    }
-  };
+  // Left accent strip color
+  let accentCls = '';
+  if (isCurrent)         accentCls = 'bg-blue-500';
+  else if (blocked)      accentCls = 'bg-red-700/50';
+  else if (isCompleted)  accentCls = 'bg-emerald-800/40';
 
-  const getPassStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'in_progress':
-        return 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20';
-      case 'completed':
-        return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
-      case 'skipped':
-        return 'text-zinc-500 bg-zinc-500/10 border-zinc-500/20';
-      case 'planned':
-      default:
-        return 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20';
-    }
-  };
-
-  // Render plan summary card based on state
-  const renderPlanSummary = () => {
-    switch (planState) {
-      case 'active':
-        return (
-          <div className="border border-zinc-800 bg-zinc-900/50 p-5 rounded-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4" data-testid="plan-summary-card">
-            <div className="flex flex-col gap-2">
-              <div className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500">PLAN ACTIVE</div>
-              <div className="text-lg font-medium text-zinc-100">
-                {currentPass ? `Current pass in progress: ${currentPass.name}` : nextPass ? `Next pass ready: ${nextPass.name}` : 'No current pass'}
-              </div>
-              <div className="text-sm text-zinc-400">
-                {currentPass ? currentPass.goal : nextPass ? nextPass.goal : 'All passes are terminal or blocked'}
-              </div>
-            </div>
-            {(currentPass || nextPass) && (
-              <button
-                onClick={() => onNavigateToPass(currentPass?.passId || nextPass?.passId)}
-                className="bg-zinc-100 text-zinc-950 hover:bg-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                data-testid="plan-summary-action-button"
-              >
-                {currentPass ? 'Open current pass' : 'Open next pass'}
-              </button>
-            )}
-          </div>
-        );
-      case 'completion_ready':
-        return (
-          <div className="border border-zinc-800 bg-zinc-900/50 p-5 rounded-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4" data-testid="plan-summary-card">
-            <div className="flex flex-col gap-2">
-              <div className="text-xs font-mono uppercase tracking-[0.2em] text-yellow-400">COMPLETION READY</div>
-              <div className="text-lg font-medium text-zinc-100">All passes are terminal</div>
-              <div className="text-sm text-zinc-400">Manual final review is ready.</div>
-            </div>
-            <button
-              onClick={() => console.log('Review completion evidence')}
-              className="bg-zinc-100 text-zinc-950 hover:bg-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              data-testid="plan-summary-action-button"
-            >
-              Review completion evidence
-            </button>
-          </div>
-        );
-      case 'complete':
-        return (
-          <div className="border border-zinc-800 bg-zinc-900/50 p-5 rounded-md flex flex-col gap-2" data-testid="plan-summary-card">
-            <div className="text-xs font-mono uppercase tracking-[0.2em] text-emerald-400">PLAN COMPLETE</div>
-            <div className="text-lg font-medium text-zinc-100">Plan complete</div>
-            <div className="text-sm text-zinc-400">All planned passes are complete.</div>
-          </div>
-        );
-      case 'abandoned':
-        return (
-          <div className="border border-zinc-800 bg-zinc-900/50 p-5 rounded-md flex flex-col gap-2" data-testid="plan-summary-card">
-            <div className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500">PLAN ABANDONED</div>
-            <div className="text-lg font-medium text-zinc-100">Plan abandoned</div>
-            <div className="text-sm text-zinc-400">This plan is no longer active.</div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  // Contextual primary action
+  let actionBtn = null;
+  if (isCompleted) {
+    actionBtn = (
+      <button
+        onClick={() => onNavigateToPass(pass.passId)}
+        className="flex items-center gap-1 text-[11px] text-slate-600 px-2.5 py-1 border border-[#1e1e1e] rounded-sm hover:border-[#2a2a2a] hover:text-slate-400 transition-colors whitespace-nowrap"
+        data-testid={`pass-view-button-${index + 1}`}
+      >
+        <ExternalLink size={9} />
+        View
+      </button>
+    );
+  } else if (isCurrent) {
+    actionBtn = (
+      <button
+        onClick={() => onNavigateToPass(pass.passId)}
+        className="flex items-center gap-1 text-[11px] text-blue-400 px-2.5 py-1 border border-blue-700/40 rounded-sm hover:border-blue-500/60 hover:text-blue-300 bg-blue-950/30 transition-colors whitespace-nowrap"
+        data-testid={`pass-view-button-${index + 1}`}
+      >
+        <ExternalLink size={9} />
+        Open
+      </button>
+    );
+  } else if (isPlanned && !blocked) {
+    actionBtn = (
+      <button
+        onClick={() => onCreateRun(pass.passId)}
+        className="flex items-center gap-1 text-[11px] text-slate-400 px-2.5 py-1 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors whitespace-nowrap"
+        data-testid={`pass-run-button-${index + 1}`}
+      >
+        <Plus size={9} />
+        Create run
+      </button>
+    );
+  } else if (isPlanned && blocked) {
+    actionBtn = (
+      <span
+        className="text-[11px] text-slate-800 px-2.5 py-1 border border-[#191919] rounded-sm cursor-not-allowed select-none whitespace-nowrap"
+        data-testid={`pass-run-button-${index + 1}`}
+      >
+        Waiting
+      </span>
+    );
+  }
 
   return (
-    <div className="bg-[#0A0A0A] min-h-screen">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 md:space-y-8">
-        {/* Header / Breadcrumb */}
-        <div className="flex flex-col gap-4 pb-4 border-b border-zinc-800">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="text-zinc-400 hover:text-zinc-100 transition-colors"
-              data-testid="back-button"
+    <div
+      className={`relative border-b border-[#161616] last:border-b-0 transition-colors ${
+        isCurrent ? 'bg-[#0c1118]' : ''
+      }`}
+      data-testid={`pass-row-${index + 1}`}
+    >
+      {/* Left accent strip */}
+      {accentCls && (
+        <div className={`absolute inset-y-0 left-0 w-[2px] ${accentCls}`} />
+      )}
+
+      <div className={`flex items-start gap-3 py-3 pr-4 ${accentCls ? 'pl-5' : 'pl-5'}`}>
+        {/* Sequence + status dot */}
+        <div className="flex flex-col items-center gap-1.5 pt-0.5 flex-shrink-0" style={{ width: '20px' }}>
+          <span
+            className="text-[10px] font-mono text-slate-700 leading-none"
+            data-testid={`pass-sequence-${index + 1}`}
+          >
+            {index + 1}
+          </span>
+          <div className={`h-1.5 w-1.5 rounded-full ${passStatusCfg.dotCls}`} />
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* Name row: name + passId + status badge */}
+          <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-0.5">
+            <span
+              className={`text-[13px] font-medium leading-snug ${
+                isCurrent ? 'text-slate-100' : isCompleted ? 'text-slate-500' : 'text-slate-300'
+              }`}
+              data-testid={`pass-name-${index + 1}`}
             >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="text-sm text-zinc-400" data-testid="plan-breadcrumb">
-              Plans / <span className="text-zinc-200">{plan.title}</span>
+              {pass.name}
+            </span>
+            <span
+              className="font-mono text-[10px] text-slate-700"
+              data-testid={`pass-id-${index + 1}`}
+            >
+              {pass.passId}
+            </span>
+            <span
+              className={`inline-flex items-center px-1.5 py-px rounded-sm text-[9px] font-medium tracking-wide border ${passStatusCfg.badgeCls}`}
+              data-testid={`pass-status-${index + 1}`}
+            >
+              {passStatusCfg.label}
+            </span>
+          </div>
+
+          {/* Goal — hide for completed (calmer) */}
+          {!isCompleted && pass.goal && (
+            <div
+              className="text-[11px] text-slate-500 truncate leading-snug mb-1"
+              data-testid={`pass-goal-${index + 1}`}
+            >
+              {pass.goal}
             </div>
-          </div>
+          )}
 
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-100" data-testid="plan-title">
-                {plan.title}
-              </h1>
-              <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium border ${getStatusBadgeClass(planState)}`}
-                  data-testid="plan-status-badge"
-                >
-                  {planState === 'active' ? 'Active' : planState === 'completion_ready' ? 'Completion Ready' : planState === 'complete' ? 'Complete' : 'Abandoned'}
-                </span>
-                <span className="text-xs font-mono text-zinc-500" data-testid="plan-id">
-                  {plan.planId}
-                </span>
-              </div>
+          {/* Scope — only for current pass */}
+          {isCurrent && pass.executionScope && (
+            <div
+              className="font-mono text-[10px] text-slate-700 truncate mb-1"
+              data-testid={`pass-scope-${index + 1}`}
+            >
+              {pass.executionScope}
             </div>
+          )}
 
-            <div className="flex flex-col gap-1 text-xs text-zinc-500">
-              {plan.repo && (
-                <div className="font-mono" data-testid="plan-repo">
-                  {plan.repo} / {plan.branch || 'main'}
-                </div>
-              )}
-              {plan.sourceArtifactPath && (
-                <div className="font-mono" data-testid="plan-artifact-path">
-                  {plan.sourceArtifactPath}
-                </div>
-              )}
-              {plan.updatedAt && (
-                <div data-testid="plan-updated-at">{plan.updatedAt}</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Plan Summary/Current State Card */}
-        {renderPlanSummary()}
-
-        {/* Progress Summary Strip */}
-        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border border-zinc-800 rounded-md bg-zinc-950 overflow-hidden" data-testid="progress-summary-strip">
-          <div className="px-4 py-3 flex-1 flex flex-col gap-1">
-            <div className="text-xs text-zinc-500">Total passes</div>
-            <div className="text-xl font-mono text-zinc-100">{totalPasses}</div>
-          </div>
-          <div className="px-4 py-3 flex-1 flex flex-col gap-1">
-            <div className="text-xs text-zinc-500">Completed</div>
-            <div className="text-xl font-mono text-emerald-400">{completedPasses}</div>
-          </div>
-          <div className="px-4 py-3 flex-1 flex flex-col gap-1">
-            <div className="text-xs text-zinc-500">In progress</div>
-            <div className="text-xl font-mono text-cyan-400">{inProgressPasses}</div>
-          </div>
-          <div className="px-4 py-3 flex-1 flex flex-col gap-1">
-            <div className="text-xs text-zinc-500">Planned</div>
-            <div className="text-xl font-mono text-zinc-400">{plannedPasses}</div>
-          </div>
-          <div className="px-4 py-3 flex-1 flex flex-col gap-1">
-            <div className="text-xs text-zinc-500">Skipped</div>
-            <div className="text-xl font-mono text-zinc-500">{skippedPasses}</div>
-          </div>
-          <div className="px-4 py-3 flex-1 flex flex-col gap-1">
-            <div className="text-xs text-zinc-500">Completion ready</div>
-            <div className="text-xl font-mono text-yellow-400">{completionReadyPasses}</div>
-          </div>
-        </div>
-
-        {/* Pass Timeline/List */}
-        <div className="space-y-3">
-          <h2 className="text-xl font-medium tracking-tight text-zinc-100">Pass Timeline</h2>
-          <div className="border border-zinc-800 rounded-md divide-y divide-zinc-800 bg-zinc-950" data-testid="pass-timeline-list">
-            {plan.passes && plan.passes.length > 0 ? (
-              plan.passes.map((pass, index) => {
-                const blocked = isPassBlocked(pass);
-                const blockingDep = blocked ? getBlockingDependency(pass) : null;
-                const canCreateRun = (pass.status === 'planned' || pass.status === 'in_progress') && !blocked;
-
-                return (
-                  <div
-                    key={pass.passId}
-                    className="py-3 px-4 hover:bg-zinc-900/50 transition-colors"
-                    data-testid={`pass-row-${index + 1}`}
+          {/* Dependency pills */}
+          {pass.dependencies && pass.dependencies.length > 0 && (
+            <div
+              className="flex flex-wrap items-center gap-1 mt-1"
+              data-testid={`pass-dependencies-${index + 1}`}
+            >
+              {blocked ? (
+                blockingDeps.map((dep) => (
+                  <span
+                    key={dep.passId}
+                    className="inline-flex items-center gap-0.5 font-mono text-[10px] px-1.5 py-px rounded-sm bg-red-500/10 text-red-400 border border-red-800/40"
                   >
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                      {/* Sequence */}
-                      <div className="text-xs font-mono text-zinc-500 w-8" data-testid={`pass-sequence-${index + 1}`}>
-                        {index + 1}
-                      </div>
-
-                      {/* Name and ID */}
-                      <div className="flex flex-col gap-0.5 min-w-[200px]">
-                        <div className="text-zinc-200 font-medium text-sm" data-testid={`pass-name-${index + 1}`}>
-                          {pass.name}
-                        </div>
-                        <div className="text-xs font-mono text-zinc-500" data-testid={`pass-id-${index + 1}`}>
-                          {pass.passId}
-                        </div>
-                      </div>
-
-                      {/* Status Pill */}
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium border ${getPassStatusBadgeClass(pass.status)} whitespace-nowrap`}
-                        data-testid={`pass-status-${index + 1}`}
-                      >
-                        {pass.status === 'in_progress' ? 'In Progress' : pass.status === 'completed' ? 'Completed' : pass.status === 'skipped' ? 'Skipped' : 'Planned'}
-                      </span>
-
-                      {/* Goal and Scope */}
-                      <div className="flex flex-col gap-0.5 flex-1">
-                        <div className="text-zinc-300 text-sm" data-testid={`pass-goal-${index + 1}`}>
-                          {pass.goal || 'No goal specified'}
-                        </div>
-                        <div className="text-xs text-zinc-500 truncate max-w-sm" data-testid={`pass-scope-${index + 1}`}>
-                          {pass.executionScope || 'No execution scope'}
-                        </div>
-                      </div>
-
-                      {/* Dependencies */}
-                      <div className="flex gap-2 items-center flex-wrap" data-testid={`pass-dependencies-${index + 1}`}>
-                        {blocked && blockingDep ? (
-                          <span className="text-xs font-mono rounded-full px-2 py-0.5 border text-red-400 bg-red-400/10 border-red-400/20 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            Blocked by {blockingDep.passId}
-                          </span>
-                        ) : pass.dependencies && pass.dependencies.length > 0 ? (
-                          pass.dependencies.map(depId => (
-                            <span key={depId} className="text-xs font-mono rounded-full px-2 py-0.5 border text-zinc-400 bg-zinc-400/10 border-zinc-400/20">
-                              {depId}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-zinc-500 italic">No dependencies</span>
-                        )}
-                      </div>
-
-                      {/* Associated Run Hint */}
-                      <div className="text-xs text-zinc-500 min-w-[120px]" data-testid={`pass-run-hint-${index + 1}`}>
-                        {pass.runId ? (
-                          <span className="font-mono">{pass.runId}</span>
-                        ) : (
-                          <span className="italic">No run created yet</span>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2 items-center" data-testid={`pass-actions-${index + 1}`}>
-                        <button
-                          onClick={() => onNavigateToPass(pass.passId)}
-                          className="hover:bg-zinc-800 text-zinc-300 hover:text-white px-2 py-1 rounded text-xs transition-colors flex items-center gap-1"
-                          data-testid={`pass-view-button-${index + 1}`}
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          View
-                        </button>
-                        <button
-                          onClick={() => canCreateRun && onCreateRun(pass.passId)}
-                          disabled={!canCreateRun}
-                          className={`px-2 py-1 rounded text-xs transition-colors flex items-center gap-1 ${
-                            canCreateRun
-                              ? 'hover:bg-zinc-800 text-zinc-300 hover:text-white'
-                              : 'text-zinc-600 cursor-not-allowed'
-                          }`}
-                          data-testid={`pass-run-button-${index + 1}`}
-                        >
-                          <PlayCircle className="w-3 h-3" />
-                          Run
-                        </button>
-                        <button
-                          onClick={() => copyToClipboard(pass.passId)}
-                          className="hover:bg-zinc-800 text-zinc-300 hover:text-white px-2 py-1 rounded text-xs transition-colors"
-                          data-testid={`copy-pass-id-button-${index + 1}`}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="py-8 text-center text-zinc-500 italic">No passes available</div>
-            )}
-          </div>
+                    <AlertCircle size={8} />
+                    Blocked by {dep.passId}
+                  </span>
+                ))
+              ) : (
+                pass.dependencies.map((depId) => (
+                  <span
+                    key={depId}
+                    className="inline-flex items-center font-mono text-[10px] px-1.5 py-px rounded-sm bg-slate-900 text-slate-700 border border-[#1e1e1e]"
+                  >
+                    {depId}
+                  </span>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Plan Artifacts/Source Context */}
-        <div className="space-y-3">
-          <h2 className="text-xl font-medium tracking-tight text-zinc-100">Plan Context</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-zinc-800 rounded-md p-4 bg-zinc-900/30" data-testid="artifacts-section">
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-zinc-500">Source Intent Summary</div>
-              <div className="text-sm font-mono text-zinc-300">{plan.sourceIntentSummary || 'No source intent summary'}</div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-zinc-500">Source Artifact Path</div>
-              <div className="text-sm font-mono text-zinc-300">{plan.sourceArtifactPath || 'Source artifact unavailable'}</div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-zinc-500">Repository</div>
-              <div className="text-sm font-mono text-zinc-300">{plan.repo || 'No repository'}</div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-zinc-500">Branch</div>
-              <div className="text-sm font-mono text-zinc-300">{plan.branch || 'No branch'}</div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-zinc-500">Plan ID</div>
-              <div className="text-sm font-mono text-zinc-300">{plan.planId}</div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-zinc-500">Plan Status</div>
-              <div className="text-sm font-mono text-zinc-300">{planState}</div>
-            </div>
-          </div>
+        {/* Right: run hint + action + copy */}
+        <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
+          <span
+            className="font-mono text-[10px] min-w-[68px] text-right"
+            data-testid={`pass-run-hint-${index + 1}`}
+          >
+            {pass.runId ? (
+              <span className="text-slate-600">{pass.runId}</span>
+            ) : (
+              <span className="text-slate-800">No run yet</span>
+            )}
+          </span>
+
+          {actionBtn}
+
+          <button
+            onClick={() => copyText(pass.passId)}
+            className="text-slate-800 hover:text-slate-500 transition-colors p-0.5 flex-shrink-0"
+            data-testid={`copy-pass-id-button-${index + 1}`}
+            title={`Copy ${pass.passId}`}
+          >
+            <Copy size={10} />
+          </button>
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default PlanDetailPage;
+/* ─────────────────────────────────────────────────────
+   PlanDetailPage
+───────────────────────────────────────────────────── */
+export default function PlanDetailPage({ plan, onBack, onNavigateToPass, onCreateRun }) {
+  const navigate = useNavigate();
+
+  const passes      = plan.passes || [];
+  const currentPass = passes.find((p) => p.status === 'in_progress') || null;
+  const statusCfg   = PLAN_STATUS[plan.status] || PLAN_STATUS.active;
+  const cardCfg     = PLAN_CARD[plan.status]   || PLAN_CARD.active;
+
+  // Progress counts
+  const total     = passes.length;
+  const completed = passes.filter((p) => p.status === 'completed').length;
+  const inProg    = passes.filter((p) => p.status === 'in_progress').length;
+  const planned   = passes.filter((p) => p.status === 'planned').length;
+  const skipped   = passes.filter((p) => p.status === 'skipped').length;
+
+  // Segmented bar geometry
+  const BAR_SEGS   = Math.min(total, 12);
+  const filledSegs = total <= 12 ? completed : Math.round((completed / total) * 12);
+  const activeSegs = total <= 12 ? inProg    : Math.round((inProg    / total) * 12);
+
+  return (
+    <div
+      className="flex flex-col bg-[#0e0e0e] text-slate-200"
+      style={{ height: '100vh', fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif' }}
+      data-testid="plan-detail-page"
+    >
+      {/* ── Top nav ── */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5 border-b border-[#222] flex-shrink-0"
+        data-testid="top-nav"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-100">Relay</span>
+          <span className="text-slate-700 text-xs">·</span>
+          <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            data-testid="nav-plans-btn"
+            onClick={() => navigate('/plans')}
+            className="text-xs text-slate-200 px-3 py-1.5 border border-[#333] rounded-sm bg-[#1a1a1a] transition-colors"
+          >
+            Plans
+          </button>
+          <button
+            data-testid="nav-runs-btn"
+            onClick={() => navigate('/runs')}
+            className="text-xs text-slate-400 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors"
+          >
+            Runs
+          </button>
+        </div>
+      </div>
+
+      {/* ── Page header ── */}
+      <div
+        className="px-6 pt-4 pb-4 border-b border-[#1a1a1a] flex-shrink-0"
+        data-testid="page-header"
+      >
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 mb-3" data-testid="plan-breadcrumb">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            data-testid="back-button"
+          >
+            <ArrowLeft size={11} />
+            Plans
+          </button>
+          <span className="text-slate-800 text-[11px]">·</span>
+          <span className="text-[11px] text-slate-600 truncate max-w-xs">{plan.title}</span>
+        </div>
+
+        {/* Title + status badge */}
+        <div className="flex items-start gap-3 mb-2.5">
+          <h1
+            className="text-xl font-semibold text-slate-100 tracking-tight leading-snug"
+            data-testid="plan-title"
+          >
+            {plan.title}
+          </h1>
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-medium tracking-wide whitespace-nowrap mt-0.5 flex-shrink-0 ${statusCfg.cls}`}
+            data-testid="plan-status-badge"
+          >
+            {statusCfg.label}
+          </span>
+        </div>
+
+        {/* Compact metadata bar */}
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-1"
+          data-testid="plan-meta-bar"
+        >
+          {/* planId — copyable on hover */}
+          <button
+            onClick={() => copyText(plan.planId)}
+            className="flex items-center gap-1 font-mono text-[11px] text-slate-600 hover:text-slate-400 transition-colors group"
+            data-testid="plan-id-copy-btn"
+            title="Copy plan ID"
+          >
+            <span data-testid="plan-id">{plan.planId}</span>
+            <Copy size={9} className="opacity-0 group-hover:opacity-50 transition-opacity" />
+          </button>
+          <span className="text-slate-800 text-[10px]">·</span>
+          <span className="font-mono text-[11px] text-slate-600" data-testid="plan-repo">
+            {plan.repo}
+          </span>
+          <span className="text-slate-800 text-[10px]">/</span>
+          <span className="font-mono text-[11px] text-slate-600" data-testid="plan-branch">
+            {plan.branch}
+          </span>
+          {plan.sourceArtifactPath && (
+            <>
+              <span className="text-slate-800 text-[10px]">·</span>
+              <span
+                className="font-mono text-[11px] text-slate-700 truncate max-w-[260px]"
+                data-testid="plan-artifact-path"
+              >
+                {plan.sourceArtifactPath}
+              </span>
+            </>
+          )}
+          {plan.updatedAt && (
+            <>
+              <span className="text-slate-800 text-[10px]">·</span>
+              <span className="text-[11px] text-slate-700" data-testid="plan-updated-at">
+                {plan.updatedAt}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Scrollable content ── */}
+      <div className="flex-1 overflow-auto" data-testid="plan-detail-content">
+        <div className="max-w-5xl mx-auto px-6 py-5 space-y-4">
+
+          {/* ── State card ── */}
+          <div
+            className="relative border border-[#1e1e1e] bg-[#111111] flex items-start justify-between gap-4 px-5 py-4"
+            data-testid="plan-summary-card"
+          >
+            {/* Colored left accent */}
+            <div className={`absolute inset-y-0 left-0 w-[2px] ${cardCfg.accentCls}`} />
+
+            <div className="pl-1 flex flex-col gap-1 min-w-0 flex-1">
+              <div className={`text-[10px] font-mono uppercase tracking-[0.18em] ${cardCfg.eyebrowCls}`}>
+                {cardCfg.eyebrow}
+              </div>
+              {plan.status === 'active' && currentPass ? (
+                <>
+                  <div className="text-sm font-medium text-slate-100 leading-snug">
+                    {currentPass.name}
+                  </div>
+                  <div className="text-xs text-slate-500 truncate max-w-xl">
+                    {currentPass.goal}
+                  </div>
+                </>
+              ) : plan.status === 'active' ? (
+                <div className="text-sm text-slate-400">No pass currently in progress</div>
+              ) : plan.status === 'completion_ready' ? (
+                <div className="text-sm text-slate-300">All passes complete — plan ready for review</div>
+              ) : plan.status === 'complete' ? (
+                <div className="text-sm text-slate-400">All planned passes completed successfully</div>
+              ) : (
+                <div className="text-sm text-slate-600">This plan is no longer active</div>
+              )}
+            </div>
+
+            {/* Card actions — shown only for active plan with current pass */}
+            {plan.status === 'active' && currentPass && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() =>
+                    copyText(
+                      `passId: ${currentPass.passId}\ngoal: ${currentPass.goal}\nscope: ${currentPass.executionScope}`
+                    )
+                  }
+                  className="text-[11px] text-slate-500 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-300 transition-colors whitespace-nowrap"
+                  data-testid="copy-pass-context-btn"
+                >
+                  Copy context
+                </button>
+                <button
+                  onClick={() => onNavigateToPass(currentPass.passId)}
+                  className="text-[11px] text-slate-200 px-3 py-1.5 border border-[#3a3a3a] rounded-sm bg-[#1a1a1a] hover:bg-[#222] hover:text-white transition-colors whitespace-nowrap"
+                  data-testid="plan-summary-action-button"
+                >
+                  Open current pass
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── Progress strip ── */}
+          {passes.length > 0 && (
+            <div
+              className="flex items-center gap-4 px-5 py-3 border border-[#1a1a1a] bg-[#0d0d0d]"
+              data-testid="progress-summary-strip"
+            >
+              {/* Segmented bar */}
+              <div className="flex gap-px flex-shrink-0">
+                {Array.from({ length: BAR_SEGS }).map((_, i) => {
+                  let cls = 'bg-slate-800';
+                  if (i < filledSegs) cls = 'bg-emerald-600/50';
+                  else if (i < filledSegs + activeSegs) cls = 'bg-blue-500/65';
+                  return (
+                    <div
+                      key={i}
+                      className={`h-1.5 rounded-[1px] ${cls}`}
+                      style={{ width: '8px' }}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Counts */}
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 text-[11px] font-mono">
+                <span className="text-slate-600">{total} passes</span>
+                {completed > 0 && (
+                  <>
+                    <span className="text-slate-800">·</span>
+                    <span className="text-emerald-600">{completed} completed</span>
+                  </>
+                )}
+                {inProg > 0 && (
+                  <>
+                    <span className="text-slate-800">·</span>
+                    <span className="text-blue-400">{inProg} in progress</span>
+                  </>
+                )}
+                {planned > 0 && (
+                  <>
+                    <span className="text-slate-800">·</span>
+                    <span className="text-slate-600">{planned} planned</span>
+                  </>
+                )}
+                {skipped > 0 && (
+                  <>
+                    <span className="text-slate-800">·</span>
+                    <span className="text-slate-700">{skipped} skipped</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Pass timeline ── */}
+          <div data-testid="pass-timeline-list">
+            <div className="mb-2">
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-600">
+                Passes — {passes.length}
+              </span>
+            </div>
+            <div className="border border-[#1a1a1a] overflow-hidden">
+              {passes.length > 0 ? (
+                passes.map((pass, index) => (
+                  <PassRow
+                    key={pass.passId}
+                    pass={pass}
+                    index={index}
+                    passes={passes}
+                    onNavigateToPass={onNavigateToPass}
+                    onCreateRun={onCreateRun}
+                  />
+                ))
+              ) : (
+                <div className="px-5 py-8 text-center text-xs text-slate-600">
+                  No passes defined
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Plan context ── */}
+          <div className="border border-[#1a1a1a]" data-testid="artifacts-section">
+            <div className="px-5 py-2.5 border-b border-[#1a1a1a]">
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-600">
+                Plan Context
+              </span>
+            </div>
+            {plan.sourceIntentSummary && (
+              <div className="px-5 py-3 border-b border-[#1a1a1a]">
+                <div className="text-[10px] text-slate-600 mb-1.5">Source intent</div>
+                <div className="text-xs text-slate-400 leading-relaxed max-w-2xl">
+                  {plan.sourceIntentSummary}
+                </div>
+              </div>
+            )}
+            <div className="px-5 py-3 flex flex-wrap gap-x-8 gap-y-3">
+              {plan.sourceArtifactPath && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-[10px] text-slate-700">Artifact</div>
+                  <div className="font-mono text-[11px] text-slate-500">{plan.sourceArtifactPath}</div>
+                </div>
+              )}
+              {plan.repo && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-[10px] text-slate-700">Repo</div>
+                  <div className="font-mono text-[11px] text-slate-500">{plan.repo}</div>
+                </div>
+              )}
+              {plan.branch && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-[10px] text-slate-700">Branch</div>
+                  <div className="font-mono text-[11px] text-slate-500">{plan.branch}</div>
+                </div>
+              )}
+              {plan.planId && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-[10px] text-slate-700">Plan ID</div>
+                  <div className="font-mono text-[11px] text-slate-500">{plan.planId}</div>
+                </div>
+              )}
+              {plan.updatedAt && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-[10px] text-slate-700">Updated</div>
+                  <div className="text-[11px] text-slate-500">{plan.updatedAt}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -160,29 +160,30 @@ onProceedToAudit: () => void
 - All interactive elements have data-testid attributes
 - Test coverage: 100% (iteration_7) — 50 tests across all filter states and all plan statuses
 
-### PlanDetailPage.js (Completed — December 2025)
+### PlanDetailPage.js (Refined — Feb 2026)
 - **Purpose**: Single plan detail view for plan orchestration, showing all passes in order with dependencies and status
 - **Route**: `/plans/:planId`
 - **Structure**:
-  - Header: Breadcrumb (Plans / plan title) + plan title + status badge + planId + repo/branch + source artifact path + updated timestamp + back button
-  - Plan summary card: context-aware current state card with eyebrow (PLAN ACTIVE / COMPLETION READY / PLAN COMPLETE / PLAN ABANDONED) + title + message + primary action CTA
-  - Progress summary strip: 6 compact metrics (Total passes, Completed, In progress, Planned, Skipped, Completion ready) with monospace values
-  - Pass timeline: ordered vertical list of all passes with:
-    - Sequence number
-    - Pass name + passId (monospace)
-    - Status pill (Planned/In Progress/Completed/Skipped) with color coding
-    - Goal + execution scope (truncated)
-    - Dependency badges (red if blocked, showing blocking pass ID)
-    - Associated run hint (run ID or "No run created yet")
-    - Action buttons: View pass, Create run (disabled if blocked), Copy pass ID
-  - Plan artifacts section: 2-column grid showing source intent summary, artifact path, repo, branch, planId, plan status
-- **Status colors**: Active/In Progress=cyan, Planned=gray, Completed=green, Skipped=muted gray, Blocked=red, Completion Ready=gold
-- **Blocking logic**: Pass is blocked if any dependency is not completed; shows "Blocked by pass-xxx" with red AlertCircle
-- **Visual style**: Dark technical UI (#0A0A0A page bg, #111111 surface), monospace for IDs/paths, compact density, restrained 1px borders
-- **Navigation**: Clickable plan rows in PlansRegistryPage navigate to detail via `/plans/:planId`; back button returns to `/plans`
+  - Top nav: Relay branding + Plans (active) + Runs — consistent with PlansRegistryPage
+  - Header: Breadcrumb (← Plans · plan title) + plan title + status badge + compact metadata bar (planId copyable · repo · branch · source artifact · updated timestamp)
+  - State card: colored left-accent card (blue=active, amber=completion_ready, green=complete, gray=abandoned), eyebrow (PLAN ACTIVE etc.), current pass name + goal, "Copy context" + "Open current pass" CTA
+  - Progress strip: segmented bar (emerald=completed, blue=in_progress, dark=remaining) + inline counts (6 passes · 2 completed · 1 in progress · 3 planned)
+  - Pass timeline: ordered vertical list with:
+    - Absolute 2px left accent (blue=current, red=blocked, faint green=completed)
+    - Sequence number + status dot
+    - Pass name + passId (monospace) + status badge
+    - Goal (1 line truncated, hidden for completed) + scope (only for current pass)
+    - Dependency pills: red "Blocked by pass-xxx" if blocked, muted pill if satisfied
+    - Run hint: compact monospace runId or quiet "No run yet"
+    - **Contextual action** (ONE per row): completed=View, in_progress=Open (blue), planned+unblocked=Create run, planned+blocked=Waiting (disabled)
+    - Copy passId icon (far right, subtle)
+  - Plan Context section: compact key-value footer (source intent text + artifact/repo/branch/planId/updated)
+- **Visual style**: bg-[#0e0e0e], surface #111111, borders #1a1a1a/#161616 — exact Relay style
+- **Blocking logic**: Pass blocked if any dependency not completed; shows red "Blocked by pass-xxx" with AlertCircle
+- **Navigation**: Clickable plan rows in PlansRegistryPage → detail; back button → /plans
 - **Mock data**: MOCK_PLAN_DETAIL in App.js with 6 passes showing completed/in_progress/planned/blocked states
 - All interactive elements have data-testid attributes
-- Test coverage: Manual screenshot testing verified all states, navigation flow, and blocking behavior
+- Test coverage: Screenshot verified all states, navigation, blocking behavior, contextual actions
 
 ### P1 — Next
 - [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
