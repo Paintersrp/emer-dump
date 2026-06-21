@@ -11,6 +11,7 @@ import PlansRegistryPage, { MOCK_PLANS } from "@/components/relay/PlansRegistryP
 import PlanDetailPage from "@/components/relay/PlanDetailPage";
 import NewPlanPage from "@/components/relay/NewPlanPage";
 import PassDetailPage from "@/components/relay/PassDetailPage";
+import WorkflowBoardPage from "@/components/relay/WorkflowBoardPage";
 import { RunPlanContextHeader, hasRunPlanContext } from "@/components/relay/RunPlanContext";
 
 /* ─────────────────────────────────────────────────────
@@ -680,6 +681,14 @@ function RelayShell({
 }
 
 /* ─────────────────────────────────────────────────────
+   Route: Workflow Board
+───────────────────────────────────────────────────── */
+function WorkflowBoardRoute() {
+  const navigate = useNavigate();
+  return <WorkflowBoardPage onBack={() => navigate("/plans")} />;
+}
+
+/* ─────────────────────────────────────────────────────
    Route: New Plan
 ───────────────────────────────────────────────────── */
 function NewPlanRoute() {
@@ -889,6 +898,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/plans/new" element={<NewPlanRoute />} />
+        <Route path="/plans/board" element={<WorkflowBoardRoute />} />
         <Route path="/plans"   element={<PlansRoute />} />
         <Route path="/plans/:planId/passes/:passId" element={<PassDetailRoute />} />
         <Route path="/plans/:planId" element={<PlanDetailRoute />} />

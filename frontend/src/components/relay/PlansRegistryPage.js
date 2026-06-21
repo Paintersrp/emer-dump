@@ -522,6 +522,13 @@ export default function PlansRegistryPage({
             <Plus size={10} />
             New Plan
           </button>
+          <button
+            data-testid="nav-flow-board-btn"
+            onClick={() => navigate('/plans/board')}
+            className="text-xs text-slate-500 px-3 py-1.5 border border-[#252525] rounded-sm hover:border-[#333] hover:text-slate-300 transition-colors"
+          >
+            Flow Board
+          </button>
         </div>
       </div>
 

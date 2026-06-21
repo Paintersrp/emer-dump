@@ -101,3 +101,54 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Create a multi-screen workflow board for Relay's managed-plan flow showing 10 screen states side-by-side in sequence using the approved dark technical Relay UI style. Each screen should show: page title, current state badge, primary action, key explanatory copy, and only the relevant UI for that step."
+
+frontend:
+  - task: "WorkflowBoardPage - 10-screen managed plan flow board"
+    implemented: true
+    working: true
+    file: "frontend/src/components/relay/WorkflowBoardPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented WorkflowBoardPage.js with 10 mini-screen frames showing the managed plan flow. Route: /plans/board. Accessible via 'Flow Board' button on PlansRegistryPage. Board shows: Plans Registry, New Plan (Draft), New Plan (Validated), Plan Detail (submitted), Pass Detail (ready), New Run (prefilled), Run Workbench (execute stage), Audit Decision, Plan Detail (progress), Plan Detail (completion ready). Each frame has step label, mini screen, and annotation strip with primary action + key copy. Also fixed webpack-dev-server v5 compatibility issue (onAfterSetupMiddleware -> setupMiddlewares, https -> server.type)."
+      - working: true
+        agent: "testing"
+        comment: "TESTED SUCCESSFULLY. All requirements verified: (1) Page loads at /plans/board with correct title 'Managed Plan Flow', (2) Shows 'Screen Reference' label and '10 screens' badge, (3) All 4 phase labels visible (PLAN CREATION, PASS DISPATCH, RUN EXECUTION, PLAN PROGRESS), (4) All 10 step pills (1-10) visible and clickable in header, (5) Horizontally scrollable board with mini-screen frames working correctly, (6) First 5 screens visible with correct content (Plans Registry, New Plan Draft, New Plan Validated, Plan Detail Active, Pass Detail Ready), (7) Step pill navigation (6-10) scrolls board to reveal correct screens, (8) All screens 6-10 verified with correct content (New Run with Plan Association, Run Workbench with EXECUTION RUNNING, Audit Decision with AUDIT READY, Plan Detail with progress, Plan Detail with COMPLETION READY), (9) Annotation strips with PRIMARY ACTION labels visible on all frames, (10) Back button '← Plans' navigates correctly to /plans. No issues found."
+
+  - task: "Flow Board button on PlansRegistryPage nav"
+    implemented: true
+    working: true
+    file: "frontend/src/components/relay/PlansRegistryPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added 'Flow Board' button to PlansRegistryPage top nav, linking to /plans/board route."
+      - working: true
+        agent: "testing"
+        comment: "TESTED SUCCESSFULLY. Flow Board button (data-testid='nav-flow-board-btn') is visible in top nav after New Plan button. Clicking the button correctly navigates to /plans/board. Button text displays as 'Flow Board'. No issues found."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: true
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Implemented WorkflowBoardPage.js - a horizontally scrollable design board showing all 10 screen states of the managed plan flow. Route /plans/board added to App.js. 'Flow Board' button added to PlansRegistryPage nav. Also fixed webpack-dev-server v5 compatibility issue to get frontend running. Please test: 1) Navigate to /plans and click 'Flow Board' button - should navigate to /plans/board. 2) Verify board shows 10 screen frames in a horizontal scroll. 3) Click step pills (1-10) in header to scroll to specific screens. 4) Verify each mini-screen shows correct content for its step. 5) Use back button or Plans nav to return to /plans."
+  - agent: "testing"
+    message: "TESTING COMPLETE - ALL TESTS PASSED ✅. Comprehensive testing performed on WorkflowBoardPage component. All requirements from review request verified successfully: (1) Plans Registry loads correctly with table, (2) Flow Board button visible in top nav after New Plan button, (3) Navigation to /plans/board works, (4) Page displays 'Managed Plan Flow' title, 'Screen Reference' label, and '10 screens' badge, (5) All 4 phase labels visible (PLAN CREATION, PASS DISPATCH, RUN EXECUTION, PLAN PROGRESS), (6) All 10 step pills (1-10) visible and functional in header, (7) Horizontally scrollable board with mini-screen frames working correctly, (8) First 5 screens visible with correct content verified, (9) Step pill navigation (6-10) scrolls to reveal correct screens, (10) All screens 6-10 content verified (New Run, Run Workbench, Audit Decision, Plan Detail progress/completion), (11) Annotation strips with PRIMARY ACTION labels visible, (12) Back button navigation to /plans works correctly. No issues found. Feature is production-ready."
