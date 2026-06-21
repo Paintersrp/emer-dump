@@ -12,6 +12,7 @@ import {
   ArrowRight,
   FileCode,
 } from "lucide-react";
+import { buildRunPlanContextDetailsSection } from "@/components/relay/RunPlanContext";
 
 /* ─────────────────────────────────────────────────────
    Execution pipeline step definitions
@@ -500,6 +501,7 @@ export default function ExecutePage({
   worktree = "default",
   executionProfile = "opencode_go",
   targetModel = "deepseek-v4-flash",
+  runPlanContext = null,
 
   executeStatus = "blocked",
   blockingReason = null,
@@ -518,6 +520,7 @@ export default function ExecutePage({
 }) {
   const [tab, setTab] = useState("details");
   const pipelineStatuses = getPipelineStatuses(executeStatus);
+  const runPlanContextSection = buildRunPlanContextDetailsSection(runPlanContext);
 
   const statusBadgeCls =
     executeStatus === "complete"
@@ -565,6 +568,7 @@ export default function ExecutePage({
         },
       ],
     },
+    ...(runPlanContextSection ? [runPlanContextSection] : []),
     {
       title: "Dispatch",
       rows: [

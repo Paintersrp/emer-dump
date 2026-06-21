@@ -11,6 +11,7 @@ import PlansRegistryPage, { MOCK_PLANS } from "@/components/relay/PlansRegistryP
 import PlanDetailPage from "@/components/relay/PlanDetailPage";
 import NewPlanPage from "@/components/relay/NewPlanPage";
 import PassDetailPage from "@/components/relay/PassDetailPage";
+import { RunPlanContextHeader, hasRunPlanContext } from "@/components/relay/RunPlanContext";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -103,7 +104,7 @@ const MOCK_PASS_RUNS = {
       status: "completed",
       stage: "Audit",
       updatedAt: "2026-06-21T11:10:00Z",
-      path: "/audit?state=passed",
+      path: "/audit?state=passed&planId=plan-7&passId=pass-001",
     },
   ],
   "pass-002": [
@@ -113,7 +114,7 @@ const MOCK_PASS_RUNS = {
       status: "completed",
       stage: "Audit",
       updatedAt: "2026-06-21T13:35:00Z",
-      path: "/audit?state=warning",
+      path: "/audit?state=warning&planId=plan-7&passId=pass-002",
     },
   ],
   "pass-003": [
@@ -123,7 +124,7 @@ const MOCK_PASS_RUNS = {
       status: "in_progress",
       stage: "Execute",
       updatedAt: "2026-06-21T16:45:00Z",
-      path: "/execute",
+      path: "/execute?planId=plan-7&passId=pass-003",
     },
   ],
   "pass-004": [],
@@ -215,6 +216,47 @@ function getPlanAssociationContext(planId, passId) {
     hasPlanLookup: Boolean(normalizedPlanId),
     hasPassLookup: Boolean(normalizedPassId),
   };
+}
+
+function buildRunPlanContext(planId, passId) {
+  const normalizedPlanId = planId?.trim() || "";
+  const normalizedPassId = passId?.trim() || "";
+
+  if (!normalizedPlanId && !normalizedPassId) {
+    return null;
+  }
+
+  const { plan, pass } = getPlanAssociationContext(normalizedPlanId, normalizedPassId);
+  const passSequence =
+    plan && pass
+      ? plan.passes?.findIndex((entry) => entry.passId === pass.passId) + 1
+      : null;
+
+  return {
+    planId: normalizedPlanId || null,
+    planTitle: plan?.title || null,
+    passId: normalizedPassId || null,
+    passName: pass?.name || null,
+    passSequence: passSequence > 0 ? passSequence : null,
+    passStatus: pass?.status || null,
+  };
+}
+
+function getRunPlanContextFromSearchParams(searchParams) {
+  return buildRunPlanContext(searchParams.get("planId"), searchParams.get("passId"));
+}
+
+function appendRunPlanContext(path, runPlanContext) {
+  if (!hasRunPlanContext(runPlanContext)) {
+    return path;
+  }
+
+  const params = new URLSearchParams();
+  if (runPlanContext?.planId) params.set("planId", runPlanContext.planId);
+  if (runPlanContext?.passId) params.set("passId", runPlanContext.passId);
+
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 /* ─────────────────────────────────────────────────────
@@ -511,8 +553,10 @@ function RelayShell({
   headerBreadcrumb = ["99", MOCK_RUN.packetId, MOCK_RUN.repo, MOCK_RUN.branch],
   backLabel = "Runs",
   backPath = "/runs",
+  runPlanContext = null,
 }) {
   const navigate = useNavigate();
+  const stagePathFor = (path) => appendRunPlanContext(path, runPlanContext);
 
   return (
     <div
@@ -604,13 +648,17 @@ function RelayShell({
           ))}
         </div>
 
+        {hasRunPlanContext(runPlanContext) && (
+          <RunPlanContextHeader runPlanContext={runPlanContext} />
+        )}
+
         {/* Stage navigation — clickable between demo pages */}
         <div className="flex items-center" data-testid="stage-tabs">
           {STAGES.map((stage) => (
             <button
               key={stage.id}
               data-testid={`stage-tab-${stage.id}`}
-              onClick={() => stage.path && navigate(stage.path)}
+              onClick={() => stage.path && navigate(stagePathFor(stage.path))}
               className={`px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
                 stage.id === activeStageId
                   ? "border-blue-500 text-blue-400"
@@ -709,6 +757,7 @@ function NewRunRoute() {
   const [searchParams] = useSearchParams();
   const planId = searchParams.get("planId") || "";
   const passId = searchParams.get("passId") || "";
+  const runPlanContext = buildRunPlanContext(planId, passId);
 
   return (
     <RelayShell
@@ -719,6 +768,7 @@ function NewRunRoute() {
         passId ? "Managed pass association armed" : planId ? "Managed plan association armed" : "Standalone run creation"
       }`}
       headerBreadcrumb={["runs", "new", planId || "standalone", passId || "pending"]}
+      runPlanContext={runPlanContext}
     >
       <IntakePage
         {...MOCK_RUN}
@@ -734,7 +784,7 @@ function NewRunRoute() {
         onApprove={(payload) => console.log("new run: create", payload)}
         onNeedsRevision={() => console.log("new run: needs revision")}
         onBlockRun={() => console.log("new run: block run")}
-        onProceedToCompileRender={() => navigate("/")}
+        onProceedToCompileRender={() => navigate(appendRunPlanContext("/", runPlanContext))}
       />
     </RelayShell>
   );
@@ -748,16 +798,18 @@ function IntakeRoute() {
   const [searchParams] = useSearchParams();
   const state = searchParams.get("state") || "intake_needs_review";
   const mock = INTAKE_MOCKS[state] || INTAKE_MOCKS.intake_needs_review;
+  const runPlanContext = getRunPlanContextFromSearchParams(searchParams);
 
   return (
-    <RelayShell activeStageId="intake">
+    <RelayShell activeStageId="intake" runPlanContext={runPlanContext}>
       <IntakePage
         {...MOCK_RUN}
         {...mock}
+        runPlanContext={runPlanContext}
         onApprove={() => console.log("intake: approve")}
         onNeedsRevision={() => console.log("intake: needs revision")}
         onBlockRun={() => console.log("intake: block run")}
-        onProceedToCompileRender={() => navigate("/")}
+        onProceedToCompileRender={() => navigate(appendRunPlanContext("/", runPlanContext))}
       />
     </RelayShell>
   );
@@ -768,12 +820,15 @@ function IntakeRoute() {
 ───────────────────────────────────────────────────── */
 function CompileRenderRoute() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const runPlanContext = getRunPlanContextFromSearchParams(searchParams);
   return (
-    <RelayShell activeStageId="compile-render">
+    <RelayShell activeStageId="compile-render" runPlanContext={runPlanContext}>
       <CompileRenderPage
         {...MOCK_RUN}
         {...MOCK_PREPARE}
-        onReturnToIntake={() => console.log("navigate → Intake")}
+        runPlanContext={runPlanContext}
+        onReturnToIntake={() => navigate(appendRunPlanContext("/intake", runPlanContext))}
       />
     </RelayShell>
   );
@@ -784,14 +839,17 @@ function CompileRenderRoute() {
 ───────────────────────────────────────────────────── */
 function ExecuteRoute() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const runPlanContext = getRunPlanContextFromSearchParams(searchParams);
   return (
-    <RelayShell activeStageId="execute">
+    <RelayShell activeStageId="execute" runPlanContext={runPlanContext}>
       <ExecutePage
         {...MOCK_RUN}
         {...MOCK_EXECUTE}
-        onReturnToCompileRender={() => navigate("/")}
+        runPlanContext={runPlanContext}
+        onReturnToCompileRender={() => navigate(appendRunPlanContext("/", runPlanContext))}
         onDispatch={() => console.log("dispatch executor")}
-        onProceedToAudit={() => console.log("navigate → Audit")}
+        onProceedToAudit={() => navigate(appendRunPlanContext("/audit", runPlanContext))}
       />
     </RelayShell>
   );
@@ -805,13 +863,15 @@ function AuditRoute() {
   const [searchParams] = useSearchParams();
   const state = searchParams.get("state") || "blocked";
   const mock = AUDIT_MOCKS[state] || AUDIT_MOCKS.blocked;
+  const runPlanContext = getRunPlanContextFromSearchParams(searchParams);
 
   return (
-    <RelayShell activeStageId="audit">
+    <RelayShell activeStageId="audit" runPlanContext={runPlanContext}>
       <AuditPage
         {...MOCK_RUN}
         {...mock}
-        onReturnToExecute={() => navigate("/execute")}
+        runPlanContext={runPlanContext}
+        onReturnToExecute={() => navigate(appendRunPlanContext("/execute", runPlanContext))}
         onAccept={() => console.log("audit: accept")}
         onAcceptWithWarning={() => console.log("audit: accept with warning")}
         onRequestRevision={() => console.log("audit: request revision")}

@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
+import { buildRunPlanContextDetailsSection } from "@/components/relay/RunPlanContext";
 
 /* ─────────────────────────────────────────────────────
    Pipeline definitions
@@ -269,6 +270,7 @@ export default function CompileRenderPage({
   worktree = "default",
   executionProfile = "opencode_go",
   targetModel = "deepseek-v4-flash",
+  runPlanContext = null,
   compileStatus = "blocked",
   packetValidationStatus = "waiting",
   repairStatus = "na",
@@ -279,6 +281,7 @@ export default function CompileRenderPage({
   onReturnToIntake = () => {},
 }) {
   const [tab, setTab] = useState("details");
+  const runPlanContextSection = buildRunPlanContextDetailsSection(runPlanContext);
 
   const stepStatuses = {
     "compile":           compileStatus,
@@ -299,6 +302,7 @@ export default function CompileRenderPage({
         { label: "Selected model",   value: targetModel,       valueCls: "text-slate-400" },
       ],
     },
+    ...(runPlanContextSection ? [runPlanContextSection] : []),
     {
       title: "Compiled Packet",
       rows: [

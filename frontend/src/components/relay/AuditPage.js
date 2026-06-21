@@ -18,6 +18,7 @@ import {
   TriangleAlert,
   Ban,
 } from "lucide-react";
+import { buildRunPlanContextDetailsSection } from "@/components/relay/RunPlanContext";
 
 /* ─────────────────────────────────────────────────────
    Audit pipeline step definitions
@@ -662,6 +663,7 @@ export default function AuditPage({
   worktree = "default",
   executionProfile = "opencode_go",
   targetModel = "deepseek-v4-flash",
+  runPlanContext = null,
 
   auditStatus = "blocked",
   blockingReason = null,
@@ -693,6 +695,7 @@ export default function AuditPage({
 }) {
   const [tab, setTab] = useState("details");
   const pipelineStatuses = getAuditPipelineStatuses(auditStatus);
+  const runPlanContextSection = buildRunPlanContextDetailsSection(runPlanContext);
 
   /* Badge color on stage heading */
   const statusBadgeCls =
@@ -733,6 +736,7 @@ export default function AuditPage({
         },
       ],
     },
+    ...(runPlanContextSection ? [runPlanContextSection] : []),
     {
       title: "Audit Readiness",
       rows: [
@@ -899,6 +903,20 @@ export default function AuditPage({
             onReject={onReject}
             onReturnToExecute={onReturnToExecute}
           />
+
+          {runPlanContext?.passId && (
+            <div
+              className="rounded-sm border border-[#1e2733] bg-[#0d1014] px-4 py-3"
+              data-testid="audit-pass-lifecycle-note"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-400/80">
+                Pass Lifecycle
+              </p>
+              <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                Audit acceptance completes the attached pass; revision keeps it in progress.
+              </p>
+            </div>
+          )}
 
           {/* Audit pipeline */}
           <div>

@@ -15,6 +15,12 @@ import {
   TriangleAlert,
   Ban,
 } from "lucide-react";
+import {
+  RunPlanContextCard,
+  RunPlanContextStatusPill,
+  buildRunPlanContextDetailsSection,
+  hasRunPlanContext,
+} from "@/components/relay/RunPlanContext";
 
 /* ─────────────────────────────────────────────────────
    Executor adapter → model dependency table
@@ -399,13 +405,6 @@ const AdapterSelect = ({ label, value, options, onChange, sourceLabel, readOnly 
   </div>
 );
 
-const PASS_STATUS_STYLES = {
-  planned: "bg-slate-500/10 text-slate-400 border border-slate-700/40",
-  in_progress: "bg-cyan-500/10 text-cyan-400 border border-cyan-700/40",
-  completed: "bg-emerald-500/10 text-emerald-400 border border-emerald-700/40",
-  skipped: "bg-amber-500/10 text-amber-400 border border-amber-700/40",
-};
-
 const formatAssociationLabel = (value) =>
   value ? value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Unavailable";
 
@@ -441,16 +440,6 @@ const AssociationInput = ({
     )}
   </div>
 );
-
-const AssociationStatusPill = ({ status }) => {
-  const cls = PASS_STATUS_STYLES[status] || "bg-slate-500/10 text-slate-500 border border-slate-700/30";
-
-  return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-mono ${cls}`}>
-      {formatAssociationLabel(status)}
-    </span>
-  );
-};
 
 /* ─────────────────────────────────────────────────────
    Current-state card (adapts to intakeStatus)
@@ -657,6 +646,7 @@ export default function IntakePage({
   showSecondaryActions = true,
   initialAssociation = null,
   resolveAssociationContext = null,
+  runPlanContext = null,
   runState = "intake_needs_review",
   packetId = "packet-99",
   repo = "relay",
@@ -764,6 +754,8 @@ export default function IntakePage({
   /* Readiness preflight summary */
   const passedChecks = readinessChecks.filter((c) => c.status === "ok").length;
   const totalChecks  = readinessChecks.length;
+  const runPlanContextSection = buildRunPlanContextDetailsSection(runPlanContext);
+  const showRunPlanContextCard = !showPlanAssociation && hasRunPlanContext(runPlanContext);
 
   /* Inspector detail sections */
   const selectedAdapterLabel =
@@ -823,6 +815,7 @@ export default function IntakePage({
         { label: "Execution profile", value: selectedAdapter, valueCls: "text-slate-400" },
       ],
     },
+    ...(runPlanContextSection ? [runPlanContextSection] : []),
     ...(showPlanAssociation
       ? [
           {
@@ -981,6 +974,13 @@ export default function IntakePage({
             actionNotice={associationError}
             showSecondaryActions={showSecondaryActions}
           />
+
+          {showRunPlanContextCard && (
+            <div>
+              <SectionLabel>Managed Context</SectionLabel>
+              <RunPlanContextCard runPlanContext={runPlanContext} />
+            </div>
+          )}
 
           {/* Intake pipeline */}
           <div>
@@ -1241,7 +1241,7 @@ export default function IntakePage({
                                   <div>
                                     <p className="text-[10px] text-slate-600 mb-0.5">Pass status</p>
                                     {associationPass?.status ? (
-                                      <AssociationStatusPill status={associationPass.status} />
+                                      <RunPlanContextStatusPill status={associationPass.status} />
                                     ) : (
                                       <p className="text-[11px] text-amber-400/80">Status unavailable</p>
                                     )}
