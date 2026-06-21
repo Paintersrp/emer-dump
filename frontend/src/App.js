@@ -1,6 +1,7 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
+import IntakePage from "@/components/relay/IntakePage";
 import CompileRenderPage from "@/components/relay/CompileRenderPage";
 import ExecutePage from "@/components/relay/ExecutePage";
 import AuditPage from "@/components/relay/AuditPage";
@@ -49,11 +50,90 @@ const MOCK_EXECUTE = {
    Stage navigation config
 ───────────────────────────────────────────────────── */
 const STAGES = [
-  { id: "intake",         label: "Intake",          path: null },
+  { id: "intake",         label: "Intake",          path: "/intake" },
   { id: "compile-render", label: "Compile / Render", path: "/" },
   { id: "execute",        label: "Execute",          path: "/execute" },
   { id: "audit",          label: "Audit",            path: "/audit" },
 ];
+
+/* ─────────────────────────────────────────────────────
+   Intake mock states — switch via ?state=<intakeStatus>
+───────────────────────────────────────────────────── */
+const INTAKE_MOCKS = {
+  intake_needs_review: {
+    intakeStatus: "intake_needs_review",
+    blockingReason: null,
+    handoffTitle: "Planner Handoff: Managed Planner Pass Plan Contract",
+    handoffArtifact: "runs/99/handoff.json",
+    handoffSummary:
+      "Refactor the relay run pipeline to support async executor dispatch with result capture and audit integration.",
+    handoffSource: "react_workbench",
+    createdBy: "intake_endpoint",
+    readinessChecks: [
+      { id: "repo-reachable",      label: "Repo reachable",                  status: "ok"   },
+      { id: "branch-exists",       label: "Branch exists",                   status: "ok"   },
+      { id: "uncommitted-changes", label: "No uncommitted changes",          status: "warn" },
+      { id: "validation-commands", label: "Validation commands extractable", status: "ok"   },
+    ],
+    currentIssues: [
+      { id: "w1", message: "No frontmatter block found",             type: "warning", category: "validation" },
+      { id: "w2", message: "No repository specified in frontmatter", type: "warning", category: "validation" },
+      { id: "w3", message: "No branch specified in frontmatter",     type: "warning", category: "validation" },
+    ],
+    intakeArtifacts: [],
+    recentLogs: [
+      { timestamp: "09:14:02", message: "Handoff loaded from intake endpoint",       level: "info" },
+      { timestamp: "09:14:03", message: "Run configuration resolved from run value", level: "info" },
+      { timestamp: "09:14:04", message: "Preflight: 3/4 checks passed",             level: "warn" },
+      { timestamp: "09:14:05", message: "Frontmatter validation: 3 warnings found", level: "warn" },
+    ],
+  },
+  approved: {
+    intakeStatus: "approved",
+    blockingReason: null,
+    handoffTitle: "Planner Handoff: Managed Planner Pass Plan Contract",
+    handoffArtifact: "runs/99/handoff.json",
+    handoffSummary:
+      "Refactor the relay run pipeline to support async executor dispatch with result capture and audit integration.",
+    handoffSource: "react_workbench",
+    createdBy: "intake_endpoint",
+    readinessChecks: [
+      { id: "repo-reachable",      label: "Repo reachable",                  status: "ok" },
+      { id: "branch-exists",       label: "Branch exists",                   status: "ok" },
+      { id: "uncommitted-changes", label: "No uncommitted changes",          status: "ok" },
+      { id: "validation-commands", label: "Validation commands extractable", status: "ok" },
+    ],
+    currentIssues: [],
+    intakeArtifacts: [
+      { path: "runs/99/intake_packet.json", type: "intake"  },
+      { path: "runs/99/handoff.json",       type: "handoff" },
+    ],
+    recentLogs: [
+      { timestamp: "09:14:02", message: "Handoff loaded from intake endpoint",          level: "info" },
+      { timestamp: "09:14:03", message: "Run configuration resolved",                   level: "info" },
+      { timestamp: "09:14:10", message: "Preflight: 4/4 checks passed",                level: "info" },
+      { timestamp: "09:15:30", message: "Intake approved — proceeding to Compile / Render", level: "info" },
+    ],
+  },
+  blocked: {
+    intakeStatus: "blocked",
+    blockingReason: "Handoff artifact missing or unreadable",
+    handoffTitle: null,
+    handoffArtifact: null,
+    handoffSummary: null,
+    handoffSource: null,
+    createdBy: null,
+    readinessChecks: [],
+    currentIssues: [
+      { id: "e1", message: "Handoff artifact missing or unreadable", type: "error", category: "intake" },
+    ],
+    intakeArtifacts: [],
+    recentLogs: [
+      { timestamp: "09:13:59", message: "Handoff load failed: artifact not found", level: "error" },
+      { timestamp: "09:14:00", message: "Intake blocked — cannot proceed",          level: "error" },
+    ],
+  },
+};
 
 /* ─────────────────────────────────────────────────────
    Audit mock states — switch via ?state=<auditStatus>
@@ -336,6 +416,29 @@ function RelayShell({ activeStageId, children }) {
 }
 
 /* ─────────────────────────────────────────────────────
+   Route: Intake
+───────────────────────────────────────────────────── */
+function IntakeRoute() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const state = searchParams.get("state") || "intake_needs_review";
+  const mock = INTAKE_MOCKS[state] || INTAKE_MOCKS.intake_needs_review;
+
+  return (
+    <RelayShell activeStageId="intake">
+      <IntakePage
+        {...MOCK_RUN}
+        {...mock}
+        onApprove={() => console.log("intake: approve")}
+        onNeedsRevision={() => console.log("intake: needs revision")}
+        onBlockRun={() => console.log("intake: block run")}
+        onProceedToCompileRender={() => navigate("/")}
+      />
+    </RelayShell>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
    Route: Compile / Render
 ───────────────────────────────────────────────────── */
 function CompileRenderRoute() {
@@ -400,6 +503,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/intake"  element={<IntakeRoute />} />
         <Route path="/"        element={<CompileRenderRoute />} />
         <Route path="/execute" element={<ExecuteRoute />} />
         <Route path="/audit"   element={<AuditRoute />} />
