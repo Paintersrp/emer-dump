@@ -1,0 +1,75 @@
+{
+  "theme": "Dark",
+  "archetype": "Retro-Futurism / Terminal Look mixed with Swiss Brutalist (Archetype 4/7 for technical precision)",
+  "domain_context": "Developer Tools / Technical Workbench / CI-CD Pipeline",
+  "colors": {
+    "background": "bg-[#0A0A0A] or bg-slate-950",
+    "surface": "bg-[#111111] or bg-slate-900 (Use for inspector panels, inner cards)",
+    "border": "border-slate-800 or border-white/10 (Crisp 1px borders, NO soft shadows, NO glowing outlines)",
+    "text_primary": "text-slate-100",
+    "text_secondary": "text-slate-400",
+    "text_muted": "text-slate-600",
+    "accent_cyan": "text-cyan-400 bg-cyan-950/30 border-cyan-800 (Active/Selected)",
+    "accent_gold": "text-amber-400 bg-amber-950/20 border-amber-800/50 (Blocked/Review)",
+    "accent_gray": "text-slate-500 border-slate-700 (Waiting/Pending)",
+    "accent_na": "text-slate-700 border-slate-800 border-dashed (N/A)"
+  },
+  "typography": {
+    "fonts": {
+      "headings": "IBM Plex Sans, Chivo, or Geist",
+      "body": "IBM Plex Sans, Inter (if others unavailable), or Geist",
+      "monospace": "JetBrains Mono, Roboto Mono, or standard ui-monospace (CRITICAL: MUST use for IDs, paths, run states, statuses, and step numbers)"
+    },
+    "hierarchy": {
+      "stage_header": "text-2xl font-semibold tracking-tight text-slate-100",
+      "stage_subtitle": "text-sm text-slate-400 font-mono",
+      "section_header": "text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4",
+      "body": "text-sm text-slate-300",
+      "mono_label": "text-[11px] font-mono text-slate-500 uppercase tracking-wider"
+    }
+  },
+  "layout_and_spacing": {
+    "page_structure": "Flex layout. Main content area (flex-1) left/center, Right Inspector panel (w-80 or w-96, border-l border-slate-800, h-full, overflow-y-auto).",
+    "spacing_system": "Dense control-room spacing. p-4, p-6. Container blocks should have rigid structures.",
+    "borders": "Expose the skeleton. Use border-collapse styles. 1px borders separating all major sections."
+  },
+  "components": {
+    "blocker_card": {
+      "style": "Sharp corners (rounded-sm or rounded-none). Flat background (bg-amber-950/10). 1px solid border-amber-900/50.",
+      "layout": "Flex row. Warning icon left (amber), text center, CTA button right.",
+      "cta_button": "Shadcn Button, size 'sm', variant 'outline'. border-amber-700/50 text-amber-400 hover:bg-amber-950/30 hover:text-amber-300."
+    },
+    "stepper_pipeline": {
+      "style": "Compact vertical layout. Each step is a row.",
+      "step_row": "flex items-center gap-3 py-2 border-b border-slate-800/50 last:border-0",
+      "step_status_icon": "16px or 20px. CircleDashed/Clock for waiting, AlertCircle/XOctagon for blocked, Minus for N/A.",
+      "step_text": "text-sm. Monospace font for pipeline step names is preferred.",
+      "states": {
+        "blocked": "text-amber-400 icon, text-slate-200 step name",
+        "waiting": "text-slate-600 icon, text-slate-500 step name",
+        "na": "text-slate-700 icon, text-slate-600 step name line-through or heavily muted"
+      }
+    },
+    "right_inspector": {
+      "tabs": "Shadcn Tabs. Use w-full. TabList should be bg-transparent border-b border-slate-800 rounded-none h-auto p-0. TabTrigger should be rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent px-4 py-2 text-xs uppercase tracking-wider font-semibold.",
+      "details_section": "Vertical stack of key-value pairs. Label: mono_label. Value: text-sm flex items-center gap-2 mono text-slate-200. Add border-b border-slate-800/50 pb-3 mb-3 last:border-0."
+    },
+    "artifacts_empty_state": {
+      "style": "Subtle dashed border (border-dashed border-slate-800), p-8 flex flex-col items-center justify-center text-center bg-slate-900/20",
+      "text": "text-sm text-slate-500"
+    }
+  },
+  "icons": {
+    "library": "lucide-react",
+    "usage": "Use AlertTriangle for blockers, CircleDashed for waiting, Ban or MinusCircle for N/A, FileCode for artifacts. Use size={16} to keep UI dense."
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: Do NOT add soft shadows (`shadow-md`, `shadow-lg`). Use strictly 1px borders (`border-slate-800`) to define hierarchy.",
+    "CRITICAL: Do NOT use gradients or consumer SaaS aesthetics. The aesthetic is purely functional, dark, data-dense.",
+    "CRITICAL: Build the components using `.js` files, NOT `.tsx` files.",
+    "CRITICAL: EVERY interactive element, status badge, and pipeline step MUST have a `data-testid` attribute (e.g., `data-testid=\"blocker-cta-button\"`, `data-testid=\"pipeline-step-compile\"`).",
+    "CRITICAL: Ensure the right inspector tab content uses dense key-value pair layouts. Keep text sizes to `text-sm` and `text-xs`.",
+    "Use standard Tailwind CSS classes. Use Lucide React for icons.",
+    "Implement Shadcn UI primitives but override their default rounded/shadowy styles to be sharp (`rounded-sm` or `rounded-none`, `shadow-none`)."
+  ]
+}
