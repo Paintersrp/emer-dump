@@ -123,6 +123,24 @@ onProceedToAudit: () => void
 - Test coverage: 100% (iteration_5) — 58/58 tests across all 3 states
 - App.js updated: INTAKE_MOCKS with 3 states, URL param switching (?state=), /intake route, Intake tab now navigable
 
+### RunsRegistryPage.js (Completed — Feb 2026)
+- **13 mock runs** covering every status: intake_review, validation_failed, executor_blocked, audit_ready, running, accepted, complete
+- Compact top nav: Relay branding, active "Runs" button, blue "+ New Run" button
+- Page header: "Runs" / "Handoff orchestration runs" / summary row (N runs · N need attention ⚠)
+- 6 operational filter tabs (All Runs, Needs Attention, Running, Executor Blocked, Audit Required, Complete) — bottom-border underline style with monospace count badges
+- Table: 7 columns — Run (title + compact monospace meta: runNum/packetId/repo/branch), Status, Stage (ALL CAPS monospace), Executor (monospace), Updated, Attention, Chevron
+- StatusPill: semi-transparent color-coded per status (amber=intake_review, red=validation_failed/executor_blocked, cyan=audit_ready, blue=running, green=accepted, muted green=complete)
+- AttentionPill: TriangleAlert icon + label (Review, N Validation, Blocked, Audit) — amber/red/cyan by type
+- Row hierarchy: attention rows use text-slate-100 title; non-attention rows use text-slate-400 (calm)
+- Row click navigates to correct stage route (intake→/intake, compile_render→/, execute→/execute, audit→/audit)
+- Loading state (spinner), Error state (alert + retry), Empty state (inbox icon + copy + New Run CTA)
+- Table footer: "N runs · Showing N [of N]"
+- App.js: /runs route added, nav-runs-btn updated to navigate to /runs
+- All interactive elements have data-testid attributes
+- Test coverage: 100% (iteration_6) — 50+ tests across all filter states and all status types
+
+- [x] RunsRegistryPage: full Runs Registry with 6 filters, 7-column table, status/attention pills, row navigation, loading/empty/error states
+
 ### P1 — Next
 - [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
 - [ ] CompileRenderPage: active/running compile state (progress indicator on compile step)
