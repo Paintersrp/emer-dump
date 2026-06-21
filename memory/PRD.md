@@ -83,9 +83,29 @@ onProceedToAudit: () => void
 - [x] ExecutePage: right inspector with context-aware Details sections
 - [x] ExecutePage: activity log + artifacts list
 - [x] Both pages: inspector panel with 4 tabs (Details, Artifacts, Validation, Logs)
+- [x] AuditPage: 6 audit states with full state card hierarchy
+- [x] AuditPage: 5-step Audit Pipeline with per-state visual config
+- [x] AuditPage: Evidence Summary + Audit Findings sections
+- [x] AuditPage: right inspector with 6 Details sections + Artifacts/Validation/Logs tabs
+
+### AuditPage.js (Completed — June 21, 2026)
+- **6 audit states**: blocked, ready, passed, warning, revision_required, rejected
+- Dominant state card adapts per audit state (amber/cyan/green/amber/blue/red accents + eyebrow + title + message)
+- Decision buttons (Accept / Accept with warning / Request revision / Reject) in state card — `ready` state only
+- Return to Execute CTA in `blocked` and `revision_required` states
+- 5-step Audit Pipeline: Executor result captured → Validation reviewed → Scope reviewed → Evidence reviewed → Audit decision
+- Per-state pipeline step logic (blocked/success/active/accepted/warning_decision/revision/failed/waiting)
+- Evidence Summary section (hidden when blocked): Executor result, Validation report, Changed files/diff, Scope — each with colored status tags
+- Audit Findings section: Blockers list (red, Ban icon) + Warnings list (amber, TriangleAlert icon), each with count badges and empty states
+- Activity log preview (last 7 entries, error/warn/info level coloring)
+- Generated Artifacts list (empty state or compact type-badged rows)
+- Right inspector panel: 6 Details sections (Run State, Audit Readiness, Executor Result, Validation, Scope Review, Decision) + Artifacts + Validation + Logs tabs
+- All decision variants wired: accepted, accepted_with_warnings, revision_required, rejected, pending
+- All interactive elements have data-testid attributes
+- Test coverage: 100% (iteration_4) — 44/44 tests across all 6 states
+- App.js updated: AUDIT_MOCKS with all 6 states, URL param switching (?state=), /audit route, Audit tab navigable
 
 ### P1 — Next
-- [ ] **Audit stage page** — final step in pipeline (Intake → Compile/Render → Execute → Audit)
 - [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
 - [ ] CompileRenderPage: active/running compile state (progress indicator on compile step)
 - [ ] CompileRenderPage: success states (green checkmarks, artifacts list populated)
