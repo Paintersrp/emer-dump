@@ -1,10 +1,11 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import CompileRenderPage from "@/components/relay/CompileRenderPage";
+import ExecutePage from "@/components/relay/ExecutePage";
 
 /* ─────────────────────────────────────────────────────
-   Mock data — matches intake_needs_review state
+   Shared run context
 ───────────────────────────────────────────────────── */
 const MOCK_RUN = {
   runState: "intake_needs_review",
@@ -16,6 +17,9 @@ const MOCK_RUN = {
   targetModel: "deepseek-v4-flash",
 };
 
+/* ─────────────────────────────────────────────────────
+   Compile / Render mock — blocked state
+───────────────────────────────────────────────────── */
 const MOCK_PREPARE = {
   compileStatus: "blocked",
   packetValidationStatus: "waiting",
@@ -26,20 +30,35 @@ const MOCK_PREPARE = {
   artifacts: [],
 };
 
+/* ─────────────────────────────────────────────────────
+   Execute mock — blocked state (intake_needs_review)
+───────────────────────────────────────────────────── */
+const MOCK_EXECUTE = {
+  executeStatus: "blocked",
+  blockingReason: null,
+  dispatchState: "not_dispatched",
+  startedAt: null,
+  completedAt: null,
+  resultArtifact: null,
+  recentLogs: [],
+  artifacts: [],
+};
+
+/* ─────────────────────────────────────────────────────
+   Stage navigation config
+───────────────────────────────────────────────────── */
 const STAGES = [
-  { id: "intake",          label: "Intake" },
-  { id: "compile-render",  label: "Compile / Render" },
-  { id: "execute",         label: "Execute" },
-  { id: "audit",           label: "Audit" },
+  { id: "intake",         label: "Intake",          path: null },
+  { id: "compile-render", label: "Compile / Render", path: "/" },
+  { id: "execute",        label: "Execute",          path: "/execute" },
+  { id: "audit",          label: "Audit",            path: null },
 ];
 
 /* ─────────────────────────────────────────────────────
-   Demo shell — replicates the Relay app chrome.
-   In a real integration, this shell already exists
-   and CompileRenderPage is dropped into its content area.
+   Relay demo shell — shared chrome wrapper
 ───────────────────────────────────────────────────── */
-function RelayDemoShell() {
-  const activeStageId = "compile-render";
+function RelayShell({ activeStageId, children }) {
+  const navigate = useNavigate();
 
   return (
     <div
@@ -79,7 +98,7 @@ function RelayDemoShell() {
         className="px-4 pt-3 border-b border-[#1e1e1e] flex-shrink-0"
         data-testid="run-header"
       >
-        {/* Run title row */}
+        {/* Title row */}
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
             <button
@@ -122,19 +141,19 @@ function RelayDemoShell() {
           <span>{MOCK_RUN.branch}</span>
         </div>
 
-        {/* Stage navigation */}
-        <div
-          className="flex items-center"
-          data-testid="stage-tabs"
-        >
+        {/* Stage navigation — clickable between demo pages */}
+        <div className="flex items-center" data-testid="stage-tabs">
           {STAGES.map((stage) => (
             <button
               key={stage.id}
               data-testid={`stage-tab-${stage.id}`}
+              onClick={() => stage.path && navigate(stage.path)}
               className={`px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
                 stage.id === activeStageId
                   ? "border-blue-500 text-blue-400"
-                  : "border-transparent text-slate-500 hover:text-slate-300"
+                  : stage.path
+                  ? "border-transparent text-slate-500 hover:text-slate-300 cursor-pointer"
+                  : "border-transparent text-slate-700 cursor-default"
               }`}
             >
               {stage.label}
@@ -143,21 +162,55 @@ function RelayDemoShell() {
         </div>
       </div>
 
-      {/* ── CompileRenderPage (the drop-in) ── */}
+      {/* Page content */}
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
+   Route: Compile / Render
+───────────────────────────────────────────────────── */
+function CompileRenderRoute() {
+  const navigate = useNavigate();
+  return (
+    <RelayShell activeStageId="compile-render">
       <CompileRenderPage
         {...MOCK_RUN}
         {...MOCK_PREPARE}
         onReturnToIntake={() => console.log("navigate → Intake")}
       />
-    </div>
+    </RelayShell>
   );
 }
 
+/* ─────────────────────────────────────────────────────
+   Route: Execute
+───────────────────────────────────────────────────── */
+function ExecuteRoute() {
+  const navigate = useNavigate();
+  return (
+    <RelayShell activeStageId="execute">
+      <ExecutePage
+        {...MOCK_RUN}
+        {...MOCK_EXECUTE}
+        onReturnToCompileRender={() => navigate("/")}
+        onDispatch={() => console.log("dispatch executor")}
+        onProceedToAudit={() => console.log("navigate → Audit")}
+      />
+    </RelayShell>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
+   App root
+───────────────────────────────────────────────────── */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RelayDemoShell />} />
+        <Route path="/"        element={<CompileRenderRoute />} />
+        <Route path="/execute" element={<ExecuteRoute />} />
       </Routes>
     </BrowserRouter>
   );
