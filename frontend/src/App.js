@@ -1,14 +1,15 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import IntakePage from "@/components/relay/IntakePage";
 import CompileRenderPage from "@/components/relay/CompileRenderPage";
 import ExecutePage from "@/components/relay/ExecutePage";
 import AuditPage from "@/components/relay/AuditPage";
 import RunsRegistryPage from "@/components/relay/RunsRegistryPage";
-import PlansRegistryPage from "@/components/relay/PlansRegistryPage";
+import PlansRegistryPage, { MOCK_PLANS } from "@/components/relay/PlansRegistryPage";
 import PlanDetailPage from "@/components/relay/PlanDetailPage";
 import NewPlanPage from "@/components/relay/NewPlanPage";
+import PassDetailPage from "@/components/relay/PassDetailPage";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -27,7 +28,7 @@ const MOCK_RUN = {
    Mock Plan Detail Data
 ───────────────────────────────────────────────────── */
 const MOCK_PLAN_DETAIL = {
-  planId: "plan-7a8c9d2e",
+  planId: "plan-7",
   title: "Multi-pass refactor: executor dispatch and audit integration",
   status: "active",
   repo: "relay/core",
@@ -92,6 +93,102 @@ const MOCK_PLAN_DETAIL = {
     },
   ],
 };
+
+const MOCK_PASS_RUNS = {
+  "pass-001": [
+    {
+      runId: "run-9001",
+      title: "Extract executor dispatch logic",
+      status: "completed",
+      stage: "Audit",
+      updatedAt: "2026-06-21T11:10:00Z",
+      path: "/audit?state=passed",
+    },
+  ],
+  "pass-002": [
+    {
+      runId: "run-9002",
+      title: "Implement result capture service",
+      status: "completed",
+      stage: "Audit",
+      updatedAt: "2026-06-21T13:35:00Z",
+      path: "/audit?state=warning",
+    },
+  ],
+  "pass-003": [
+    {
+      runId: "run-9003",
+      title: "Add async dispatch support",
+      status: "in_progress",
+      stage: "Execute",
+      updatedAt: "2026-06-21T16:45:00Z",
+      path: "/execute",
+    },
+  ],
+  "pass-004": [],
+  "pass-005": [],
+  "pass-006": [],
+};
+
+function buildPlanDetailMock(plan) {
+  const passes = plan.passes || [];
+
+  return {
+    ...plan,
+    totalPasses: passes.length,
+    completedPasses: passes.filter((pass) => pass.status === "completed").length,
+  };
+}
+
+function adaptPassesForPlan(summaryPlan) {
+  const summaryTotal = Math.max(1, Math.min(summaryPlan.passesTotal || MOCK_PLAN_DETAIL.passes.length, MOCK_PLAN_DETAIL.passes.length));
+  const completedCount = Math.max(0, Math.min(summaryPlan.passesComplete || 0, summaryTotal));
+
+  return MOCK_PLAN_DETAIL.passes.slice(0, summaryTotal).map((pass, index) => {
+    const sequence = index + 1;
+    const isCompleted = index < completedCount;
+    const isCurrent = summaryPlan.status === "active" && summaryPlan.currentPass && index === completedCount && completedCount < summaryTotal;
+
+    let status = "planned";
+    if (summaryPlan.status === "complete" || summaryPlan.status === "completion_ready") {
+      status = "completed";
+    } else if (summaryPlan.status === "abandoned") {
+      status = isCompleted ? "completed" : "skipped";
+    } else if (isCompleted) {
+      status = "completed";
+    } else if (isCurrent && summaryPlan.currentPass?.status === "running") {
+      status = "in_progress";
+    }
+
+    return {
+      ...pass,
+      passId: `pass-${String(sequence).padStart(3, "0")}`,
+      status,
+      runId: status === "completed" || status === "in_progress" ? pass.runId || `run-${9000 + sequence}` : null,
+    };
+  });
+}
+
+function getMockPlan(planId) {
+  const summaryPlan = MOCK_PLANS.find((plan) => plan.planId === planId);
+  if (!summaryPlan) return null;
+
+  return buildPlanDetailMock({
+    ...MOCK_PLAN_DETAIL,
+    planId: summaryPlan.planId,
+    title: summaryPlan.title,
+    repo: summaryPlan.repo,
+    branch: summaryPlan.branch,
+    status: summaryPlan.status,
+    updatedAt: summaryPlan.updatedAt,
+    passes: adaptPassesForPlan(summaryPlan),
+  });
+}
+
+function getMockRunPath(runId) {
+  const allRuns = Object.values(MOCK_PASS_RUNS).flat();
+  return allRuns.find((run) => run.runId === runId)?.path || "/intake";
+}
 
 /* ─────────────────────────────────────────────────────
    Compile / Render mock — blocked state
@@ -517,13 +614,45 @@ function PlansRoute() {
 ───────────────────────────────────────────────────── */
 function PlanDetailRoute() {
   const navigate = useNavigate();
-  
+  const { planId } = useParams();
+  const plan = getMockPlan(planId);
+
+  if (!plan) {
+    return <PlansRegistryPage />;
+  }
+
   return (
     <PlanDetailPage
-      plan={MOCK_PLAN_DETAIL}
+      plan={plan}
       onBack={() => navigate("/plans")}
-      onNavigateToPass={(passId) => console.log(`Navigate to pass: ${passId}`)}
-      onCreateRun={(passId) => console.log(`Create run for pass: ${passId}`)}
+      onNavigateToPass={(passId) => navigate(`/plans/${plan.planId}/passes/${passId}`)}
+      onCreateRun={(passId) => navigate(`/plans/${plan.planId}/passes/${passId}`)}
+    />
+  );
+}
+
+function PassDetailRoute() {
+  const navigate = useNavigate();
+  const { planId, passId } = useParams();
+  const plan = getMockPlan(planId);
+  const pass = plan?.passes?.find((entry) => entry.passId === passId);
+
+  if (!plan || !pass) {
+    return <PlansRegistryPage />;
+  }
+
+  return (
+    <PassDetailPage
+      pass={pass}
+      plan={plan}
+      allPasses={plan.passes}
+      runs={MOCK_PASS_RUNS[pass.passId] || []}
+      sequence={plan.passes.findIndex((entry) => entry.passId === pass.passId) + 1}
+      totalPasses={plan.totalPasses}
+      onBack={() => navigate(`/plans/${plan.planId}`)}
+      onOpenRun={(runId) => navigate(getMockRunPath(runId))}
+      onCreateRun={() => navigate("/intake")}
+      onNavigateToDep={(dependencyPassId) => navigate(`/plans/${plan.planId}/passes/${dependencyPassId}`)}
     />
   );
 }
@@ -625,6 +754,7 @@ function App() {
       <Routes>
         <Route path="/plans/new" element={<NewPlanRoute />} />
         <Route path="/plans"   element={<PlansRoute />} />
+        <Route path="/plans/:planId/passes/:passId" element={<PassDetailRoute />} />
         <Route path="/plans/:planId" element={<PlanDetailRoute />} />
         <Route path="/runs"   element={<RunsRoute />} />
         <Route path="/intake"  element={<IntakeRoute />} />

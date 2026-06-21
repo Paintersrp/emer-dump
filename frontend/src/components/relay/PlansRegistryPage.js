@@ -46,7 +46,7 @@ const ATTENTION_CONFIG = {
 /* ─────────────────────────────────────────────────────
    Mock plans
 ───────────────────────────────────────────────────── */
-const MOCK_PLANS = [
+export const MOCK_PLANS = [
   {
     id: "plan-8",
     planNumber: 8,
@@ -431,6 +431,8 @@ function ErrorState({ onRetry }) {
    Empty state
 ───────────────────────────────────────────────────── */
 function EmptyState({ onViewRuns }) {
+  const navigate = useNavigate();
+
   return (
     <tr>
       <td colSpan={7} className="px-6 py-20 text-center">
