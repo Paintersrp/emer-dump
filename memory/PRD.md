@@ -1,12 +1,13 @@
-# Relay Compile/Render Stage — PRD
+# Relay Stage Pages — PRD
 
 ## Original Problem Statement
-Redesign and refine the Relay Prepare stage page (Compile / Render). Replace the visually dense, equal-weight layout with a clear hierarchy showing current blocked state, compact pipeline stepper, and a streamlined inspector panel.
+Redesign and refine the Relay pipeline stage pages (Compile/Render and Execute). The system takes a Planner handoff through Intake → Compile/Render → Execute → Audit. Each stage is a drop-in React/Tailwind component with a dark technical workbench style (no marketing SaaS aesthetics). Components are props-driven with mocked state and wired through App.js routing.
 
 ## Architecture
 - **Stack**: React 19 + Tailwind CSS + shadcn/ui (Radix)
-- **Deliverable**: Drop-in component at `/app/frontend/src/components/relay/CompileRenderPage.js`
-- **Demo wrapper**: `/app/frontend/src/App.js` (RelayDemoShell with mock data)
+- **Deliverables**: Drop-in components at `/app/frontend/src/components/relay/`
+- **Demo wrapper**: `/app/frontend/src/App.js` (RelayDemoShell with mock data, react-router)
+- **No backend** — all data is mocked via props/const in App.js
 
 ## User Personas
 - Developer / engineer using Relay as a run orchestration/dispatch workbench
@@ -14,26 +15,41 @@ Redesign and refine the Relay Prepare stage page (Compile / Render). Replace the
 
 ## Core Requirements (Static)
 1. Dark technical UI (`#0e0e0e` background, `#1a1a1a` surface, 1px borders)
-2. Relay shell chrome preserved: top nav, run header, breadcrumb, stage tabs
-3. Compile/Render page content: stage header, blocker card, pipeline stepper, artifacts
-4. Right inspector panel with 4 tabs: Details, Artifacts, Validation, Logs
-5. Compact pipeline with 6 steps showing clear status hierarchy
-6. Props-driven component — accepts all data from parent
-7. Blue/cyan/gold accents, monospace for statuses/IDs
+2. Relay shell chrome preserved: top nav, run header, breadcrumb, stage tabs (Intake · Compile/Render · Execute · Audit)
+3. Right inspector panel with 4 tabs: Details, Artifacts, Validation, Logs
+4. Props-driven components — accept all data from parent
+5. Blue/cyan/gold accents, monospace for statuses/IDs, no marketing visuals
 
-## What's Been Implemented (June 21, 2026)
-- **CompileRenderPage.js**: Complete drop-in component
-  - Stage header with subtitle + run state amber badge
-  - Blocker card (amber) with "Prepare is blocked" + "Return to Intake Review" CTA
-  - 6-step pipeline stepper (blocked/waiting/na states with distinct icons and badges)
-  - Artifacts empty state section
-  - Right inspector panel with shadcn Tabs (Details/Artifacts/Validation/Logs)
-  - Inspector Details: 5 stacked sections (Run State, Compiled Packet, Repair, Executor Brief, Approval)
-  - All interactive elements have data-testid attributes
-- **App.js**: Demo shell with full Relay chrome + mock `intake_needs_review` state
-- **Webpack fix**: Patched `react-scripts` webpackDevServer.config.js for wds v5 compatibility
+## What's Been Implemented
 
-## Props Interface (CompileRenderPage)
+### CompileRenderPage.js (Completed — June 21, 2026)
+- Stage header with subtitle + run state amber badge
+- Blocker card (amber left-accent) with "CURRENT BLOCKER" eyebrow + "Return to Intake Review" CTA
+- 6-step pipeline stepper (blocked/waiting/na states with distinct icons)
+- Artifacts empty state section
+- Right inspector panel: 5 sections (Run State, Compiled Packet, Repair, Executor Brief, Approval)
+- All interactive elements have data-testid attributes
+- Test coverage: 98% (iteration_1, iteration_2) — one LOW issue: CompileRenderPage badge still shows raw snake_case (not blocking)
+
+### ExecutePage.js (Completed — June 21, 2026)
+- **5 execution states**: blocked, ready to dispatch, running, complete, failed
+- State card: adapts per status (amber/cyan/blue/red), eyebrow label, dominant title, context CTA button
+- Ready state: compact metadata grid (executor adapter, model, branch, repo)
+- 5-step Execution Pipeline stepper: Brief approved → Executor dispatched → Execution running → Result captured → Audit ready
+- Per-state pipeline step logic (blocked/success/active/running/failed/waiting)
+- Activity log preview (last 7 entries, error level coloring)
+- Generated Artifacts list (empty state or item list with type badge)
+- Right inspector panel: 5 sections (Run State, Dispatch, Executor, Result, Audit Readiness)
+  - Active step field shows context-aware current step name
+  - Blocking reason shows context-aware value (None / Waiting / error message)
+  - startedAt / completedAt use context-aware fallbacks
+- Run state badge formatted from snake_case → Title Case
+- All interactive elements have data-testid attributes
+- Test coverage: 100% (iteration_3) — all 22 tests pass across all 5 states
+
+## Props Interfaces
+
+### CompileRenderPage
 ```
 runState, packetId, repo, branch, worktree, executionProfile, targetModel
 compileStatus, packetValidationStatus, repairStatus, briefStatus, briefValidationStatus, approvalStatus
@@ -41,28 +57,45 @@ artifacts: [{ path: string }]
 onReturnToIntake: () => void
 ```
 
-## Refinement Pass (June 21, 2026)
-- Stage header: badge integrated inline next to title (no longer floated far right)
-- Blocker card: left-accent border, "CURRENT BLOCKER" eyebrow, larger dominant title, arrow CTA button
-- Pipeline: active blocked step expanded with helper text; waiting steps stripped of "Waiting on X" pills — muted icon/label communicates state; Repair shows subtle "n/a" indicator
-- Artifacts empty state: compact horizontal row with subtext (removed oversized centered box)
-- Inspector: section headers now have separator lines for clear hierarchy; KV spacing improved
-- Overall: fewer heavy borders, pipeline uses divide-y only (no outer box), reduced noise
+### ExecutePage
+```
+runState, packetId, repo, branch, worktree, executionProfile, targetModel
+executeStatus: "blocked"|"ready"|"running"|"complete"|"failed"
+blockingReason: string|null
+dispatchState: "not_dispatched"|"dispatched"|"running"|"complete"|"failed"
+startedAt: ISO string|null
+completedAt: ISO string|null
+resultArtifact: { path: string }|null
+recentLogs: [{ timestamp, message, level? }]
+artifacts: [{ path, type? }]
+onDispatch: () => void
+onReturnToCompileRender: () => void
+onProceedToAudit: () => void
+```
 
 ## Prioritized Backlog
+
 ### P0 — Complete
-- [x] Blocked state layout with dominant blocker card
-- [x] Compact pipeline stepper (6 steps)
-- [x] Inspector panel with tabs and stacked KV sections
+- [x] CompileRenderPage: blocked state with dominant blocker card
+- [x] CompileRenderPage: compact 6-step pipeline stepper
+- [x] ExecutePage: 5 execution states with full state card hierarchy
+- [x] ExecutePage: 5-step Execution Pipeline with per-state visual config
+- [x] ExecutePage: right inspector with context-aware Details sections
+- [x] ExecutePage: activity log + artifacts list
+- [x] Both pages: inspector panel with 4 tabs (Details, Artifacts, Validation, Logs)
 
 ### P1 — Next
-- [ ] Active / running compile state (progress indicator on compile step)
-- [ ] Success states (green checkmark steps, artifacts list populated)
-- [ ] Validation failure state (red step, repair eligibility shown)
-- [ ] Approval CTA row when brief is validated
+- [ ] **Audit stage page** — final step in pipeline (Intake → Compile/Render → Execute → Audit)
+- [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
+- [ ] CompileRenderPage: active/running compile state (progress indicator on compile step)
+- [ ] CompileRenderPage: success states (green checkmarks, artifacts list populated)
 
-### P2 — Future
+### P2 — Future / Backlog
+- [ ] Wire up pipeline stages with real prop-based navigation/state sharing between stages
+- [ ] CompileRenderPage: validation failure state (red step, repair eligibility)
+- [ ] CompileRenderPage: approval CTA row when brief is validated
+- [ ] Logs tab with actual log streaming / pagination
 - [ ] Collapsible pipeline steps on hover
-- [ ] Logs tab with actual log streaming
 - [ ] Transition animations between pipeline states
 - [ ] Keyboard navigation for stage tabs
+- [ ] Intake stage page design
