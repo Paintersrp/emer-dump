@@ -5,6 +5,7 @@ import IntakePage from "@/components/relay/IntakePage";
 import CompileRenderPage from "@/components/relay/CompileRenderPage";
 import ExecutePage from "@/components/relay/ExecutePage";
 import AuditPage from "@/components/relay/AuditPage";
+import RunsRegistryPage from "@/components/relay/RunsRegistryPage";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -326,6 +327,7 @@ function RelayShell({ activeStageId, children }) {
         <div className="flex items-center gap-2">
           <button
             data-testid="nav-runs-btn"
+            onClick={() => navigate("/runs")}
             className="text-xs text-slate-400 px-3 py-1.5 border border-[#2a2a2a] rounded-sm hover:border-[#3a3a3a] hover:text-slate-200 transition-colors"
           >
             Runs
@@ -416,6 +418,13 @@ function RelayShell({ activeStageId, children }) {
 }
 
 /* ─────────────────────────────────────────────────────
+   Route: Runs Registry
+───────────────────────────────────────────────────── */
+function RunsRoute() {
+  return <RunsRegistryPage />;
+}
+
+/* ─────────────────────────────────────────────────────
    Route: Intake
 ───────────────────────────────────────────────────── */
 function IntakeRoute() {
@@ -503,6 +512,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/runs"   element={<RunsRoute />} />
         <Route path="/intake"  element={<IntakeRoute />} />
         <Route path="/"        element={<CompileRenderRoute />} />
         <Route path="/execute" element={<ExecuteRoute />} />
