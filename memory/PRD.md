@@ -160,17 +160,45 @@ onProceedToAudit: () => void
 - All interactive elements have data-testid attributes
 - Test coverage: 100% (iteration_7) — 50 tests across all filter states and all plan statuses
 
+### PlanDetailPage.js (Completed — December 2025)
+- **Purpose**: Single plan detail view for plan orchestration, showing all passes in order with dependencies and status
+- **Route**: `/plans/:planId`
+- **Structure**:
+  - Header: Breadcrumb (Plans / plan title) + plan title + status badge + planId + repo/branch + source artifact path + updated timestamp + back button
+  - Plan summary card: context-aware current state card with eyebrow (PLAN ACTIVE / COMPLETION READY / PLAN COMPLETE / PLAN ABANDONED) + title + message + primary action CTA
+  - Progress summary strip: 6 compact metrics (Total passes, Completed, In progress, Planned, Skipped, Completion ready) with monospace values
+  - Pass timeline: ordered vertical list of all passes with:
+    - Sequence number
+    - Pass name + passId (monospace)
+    - Status pill (Planned/In Progress/Completed/Skipped) with color coding
+    - Goal + execution scope (truncated)
+    - Dependency badges (red if blocked, showing blocking pass ID)
+    - Associated run hint (run ID or "No run created yet")
+    - Action buttons: View pass, Create run (disabled if blocked), Copy pass ID
+  - Plan artifacts section: 2-column grid showing source intent summary, artifact path, repo, branch, planId, plan status
+- **Status colors**: Active/In Progress=cyan, Planned=gray, Completed=green, Skipped=muted gray, Blocked=red, Completion Ready=gold
+- **Blocking logic**: Pass is blocked if any dependency is not completed; shows "Blocked by pass-xxx" with red AlertCircle
+- **Visual style**: Dark technical UI (#0A0A0A page bg, #111111 surface), monospace for IDs/paths, compact density, restrained 1px borders
+- **Navigation**: Clickable plan rows in PlansRegistryPage navigate to detail via `/plans/:planId`; back button returns to `/plans`
+- **Mock data**: MOCK_PLAN_DETAIL in App.js with 6 passes showing completed/in_progress/planned/blocked states
+- All interactive elements have data-testid attributes
+- Test coverage: Manual screenshot testing verified all states, navigation flow, and blocking behavior
+
 ### P1 — Next
 - [ ] CompileRenderPage: badge format snake_case → Title Case (LOW, same as ExecutePage fix done)
 - [ ] CompileRenderPage: active/running compile state (progress indicator on compile step)
 - [ ] CompileRenderPage: success states (green checkmarks, artifacts list populated)
 
 ### P2 — Future / Backlog
+- [ ] Timestamp formatting: Convert ISO timestamps to relative times ("3 minutes ago") across all pages (Execute/Audit/Intake/Runs/Plans detail)
 - [ ] Wire up pipeline stages with real prop-based navigation/state sharing between stages
 - [ ] CompileRenderPage: validation failure state (red step, repair eligibility)
 - [ ] CompileRenderPage: approval CTA row when brief is validated
+- [ ] Integrate frontend with actual backend APIs (replace hardcoded mock data in App.js)
+- [ ] Create "demo walkthrough" mode that auto-advances through pipeline states
+- [ ] Add run "quick-open" hover tooltip on Runs Registry showing last log entries
+- [ ] Add inline pass timeline expansion on Plans Registry progress bar click
 - [ ] Logs tab with actual log streaming / pagination
 - [ ] Collapsible pipeline steps on hover
 - [ ] Transition animations between pipeline states
 - [ ] Keyboard navigation for stage tabs
-- [ ] Timestamp formatting: ISO → relative time in Execute/Audit inspectors

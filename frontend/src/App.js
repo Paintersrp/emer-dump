@@ -7,6 +7,7 @@ import ExecutePage from "@/components/relay/ExecutePage";
 import AuditPage from "@/components/relay/AuditPage";
 import RunsRegistryPage from "@/components/relay/RunsRegistryPage";
 import PlansRegistryPage from "@/components/relay/PlansRegistryPage";
+import PlanDetailPage from "@/components/relay/PlanDetailPage";
 
 /* ─────────────────────────────────────────────────────
    Shared run context
@@ -19,6 +20,76 @@ const MOCK_RUN = {
   worktree: "default",
   executionProfile: "opencode_go",
   targetModel: "deepseek-v4-flash",
+};
+
+/* ─────────────────────────────────────────────────────
+   Mock Plan Detail Data
+───────────────────────────────────────────────────── */
+const MOCK_PLAN_DETAIL = {
+  planId: "plan-7a8c9d2e",
+  title: "Multi-pass refactor: executor dispatch and audit integration",
+  status: "active",
+  repo: "relay/core",
+  branch: "feat/async-dispatch",
+  sourceArtifactPath: "plans/7a8c9d2e/plan_contract.json",
+  sourceIntentSummary: "Refactor the relay run pipeline to support async executor dispatch with result capture and audit integration.",
+  updatedAt: "2026-06-21T16:45:00Z",
+  passes: [
+    {
+      passId: "pass-001",
+      name: "Extract executor dispatch logic",
+      status: "completed",
+      goal: "Isolate executor dispatch into a dedicated module with clean interfaces",
+      executionScope: "backend/executor/dispatch.py, backend/executor/__init__.py",
+      dependencies: [],
+      runId: "run-9001",
+    },
+    {
+      passId: "pass-002",
+      name: "Implement result capture service",
+      status: "completed",
+      goal: "Build a result capture service that handles executor output and stores artifacts",
+      executionScope: "backend/services/result_capture.py, backend/models/result.py",
+      dependencies: ["pass-001"],
+      runId: "run-9002",
+    },
+    {
+      passId: "pass-003",
+      name: "Add async dispatch support",
+      status: "in_progress",
+      goal: "Enable asynchronous executor dispatch with status polling and timeout handling",
+      executionScope: "backend/executor/dispatch.py, backend/services/executor_monitor.py",
+      dependencies: ["pass-001"],
+      runId: "run-9003",
+    },
+    {
+      passId: "pass-004",
+      name: "Integrate audit validation",
+      status: "planned",
+      goal: "Wire the audit stage to consume captured results and run validation checks",
+      executionScope: "backend/audit/validator.py, backend/audit/integration.py",
+      dependencies: ["pass-002", "pass-003"],
+      runId: null,
+    },
+    {
+      passId: "pass-005",
+      name: "Update run state transitions",
+      status: "planned",
+      goal: "Ensure run state machine transitions correctly through new async execution flow",
+      executionScope: "backend/models/run.py, backend/services/run_state.py",
+      dependencies: ["pass-004"],
+      runId: null,
+    },
+    {
+      passId: "pass-006",
+      name: "End-to-end integration test",
+      status: "planned",
+      goal: "Validate full pipeline with real async executor run from intake to audit acceptance",
+      executionScope: "tests/integration/test_async_pipeline.py",
+      dependencies: ["pass-005"],
+      runId: null,
+    },
+  ],
 };
 
 /* ─────────────────────────────────────────────────────
@@ -433,6 +504,22 @@ function PlansRoute() {
 }
 
 /* ─────────────────────────────────────────────────────
+   Route: Plan Detail
+───────────────────────────────────────────────────── */
+function PlanDetailRoute() {
+  const navigate = useNavigate();
+  
+  return (
+    <PlanDetailPage
+      plan={MOCK_PLAN_DETAIL}
+      onBack={() => navigate("/plans")}
+      onNavigateToPass={(passId) => console.log(`Navigate to pass: ${passId}`)}
+      onCreateRun={(passId) => console.log(`Create run for pass: ${passId}`)}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────
    Route: Runs Registry
 ───────────────────────────────────────────────────── */
 function RunsRoute() {
@@ -528,6 +615,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/plans"   element={<PlansRoute />} />
+        <Route path="/plans/:planId" element={<PlanDetailRoute />} />
         <Route path="/runs"   element={<RunsRoute />} />
         <Route path="/intake"  element={<IntakeRoute />} />
         <Route path="/"        element={<CompileRenderRoute />} />

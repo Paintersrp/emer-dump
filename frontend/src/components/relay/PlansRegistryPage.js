@@ -295,12 +295,13 @@ function CurrentPassCell({ plan }) {
    PlanRow
 ───────────────────────────────────────────────────── */
 function PlanRow({ plan }) {
+  const navigate = useNavigate();
   const hasAttention = Boolean(plan.attention);
   return (
     <tr
       data-testid={`plan-row-${plan.planNumber}`}
       className="group border-b border-[#161616] cursor-pointer hover:bg-[#111111] transition-colors duration-100"
-      onClick={() => console.log("open plan:", plan.planId)}
+      onClick={() => navigate(`/plans/${plan.planId}`)}
     >
       {/* Plan title + meta */}
       <td className="px-6 py-3.5 pr-3">
