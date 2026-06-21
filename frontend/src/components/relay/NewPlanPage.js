@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -9,7 +9,6 @@ import {
   Copy,
   ExternalLink,
   RefreshCw,
-  Plus,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────
@@ -116,22 +115,89 @@ const FORM_STATUS = {
 function copyText(t) { navigator.clipboard.writeText(t); }
 
 /* ─────────────────────────────────────────────────────
-   Right-pane: empty / prompt
+   Right-pane: empty / draft validation framework
 ───────────────────────────────────────────────────── */
+const VALIDATION_CHECKS = [
+  { id: 'parse',  label: 'JSON parses successfully' },
+  { id: 'fields', label: 'Required plan fields present' },
+  { id: 'passes', label: 'Passes derive correctly' },
+  { id: 'deps',   label: 'Dependencies resolve' },
+];
+
 function RightEmpty({ hasInput }) {
   return (
-    <div
-      className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center"
-      data-testid="right-empty-state"
-    >
-      <div className="w-7 h-7 border border-[#2a2a2a] rounded-sm flex items-center justify-center">
-        <div className="w-2.5 h-2.5 border border-slate-700 rounded-[2px]" />
+    <div className="px-5 pt-5 pb-6" data-testid="right-empty-state">
+
+      {/* Validation not-run header */}
+      <div className="pb-4 border-b border-[#171717]">
+        <div className="flex items-center gap-2 mb-2.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#2a2a2a] flex-shrink-0" />
+          <span className="text-[11px] font-medium text-slate-600">Validation not run</span>
+        </div>
+        <p className="text-[11px] text-slate-700 leading-relaxed">
+          {hasInput
+            ? 'Run validation to inspect and submit this plan.'
+            : 'Paste a Plan of Passes JSON artifact, then validate it before submission.'}
+        </p>
       </div>
-      <p className="text-xs text-slate-500 leading-relaxed max-w-[220px]">
-        {hasInput
-          ? 'Run validation to inspect and submit this plan.'
-          : 'Paste a Plan of Passes JSON artifact to begin.'}
-      </p>
+
+      {/* Validation checks — inactive until validation runs */}
+      <div className="py-4 border-b border-[#171717]">
+        <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[#2c2c2c] mb-3">
+          Checks
+        </div>
+        <div className="border border-[#1c1c1c] overflow-hidden">
+          {VALIDATION_CHECKS.map((check) => (
+            <div
+              key={check.id}
+              className="flex items-center gap-2.5 px-3 py-2 border-b border-[#161616] last:border-b-0"
+            >
+              <div className="w-3.5 h-3.5 rounded-sm border border-[#272727] flex-shrink-0 bg-[#0e0e0e]" />
+              <span className="text-[10px] text-[#303030] leading-none">{check.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Plan Preview scaffold */}
+      <div className="py-4 border-b border-[#171717]">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-[#2c2c2c]">
+            Plan Preview
+          </span>
+          <span className="font-mono text-[8px] text-[#252525]">unavailable</span>
+        </div>
+        <div className="border border-[#1a1a1a] bg-[#0b0b0b] px-3 py-2.5">
+          <span className="font-mono text-[10px] text-[#272727]">No plan preview yet.</span>
+        </div>
+      </div>
+
+      {/* Derived Passes scaffold */}
+      <div className="py-4 border-b border-[#171717]">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-[#2c2c2c]">
+            Derived Passes
+          </span>
+          <span className="font-mono text-[8px] text-[#252525]">unavailable</span>
+        </div>
+        <div className="border border-[#1a1a1a] bg-[#0b0b0b] px-3 py-2.5">
+          <span className="font-mono text-[10px] text-[#272727]">No derived passes yet.</span>
+        </div>
+      </div>
+
+      {/* Submission Result scaffold */}
+      <div className="pt-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-[#2c2c2c]">
+            Submission Result
+          </span>
+          <span className="font-mono text-[8px] text-[#252525]">unavailable</span>
+        </div>
+        <div className="border border-[#1a1a1a] bg-[#0b0b0b] px-3 py-2.5">
+          <span className="font-mono text-[10px] text-[#272727]">No submission result.</span>
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -416,11 +482,39 @@ export default function NewPlanPage({ onBack }) {
   const [extractedPlan, setExtractedPlan]   = useState(null);
   const [submittedPlan, setSubmittedPlan]   = useState(null);
 
+  const lineNumRef = useRef(null);
+
   const statusCfg   = FORM_STATUS[formState] || FORM_STATUS.draft;
   const hasInput    = jsonInput.trim().length > 0;
   const canValidate = hasInput && !['submitting', 'submitted', 'validating'].includes(formState);
   const canSubmit   = formState === 'validated';
   const isFinal     = ['submitting', 'submitted'].includes(formState);
+
+  /* ── Editor state badge (derived from formState + hasInput) ── */
+  const editorState = (() => {
+    if (formState === 'validated')         return 'valid';
+    if (formState === 'validation_failed') return 'invalid';
+    if (formState === 'conflict')          return 'conflict';
+    if (formState === 'validating')        return 'validating';
+    if (formState === 'submitting')        return 'submitting';
+    if (formState === 'submitted')         return 'submitted';
+    if (hasInput)                          return 'edited';
+    return 'empty';
+  })();
+
+  const editorStateCfg = {
+    empty:      { label: 'empty',      cls: 'text-[#333] border-[#1e1e1e]' },
+    edited:     { label: 'edited',     cls: 'text-amber-700/80 border-amber-900/40 bg-amber-950/20' },
+    validating: { label: 'validating', cls: 'text-blue-600/70 border-blue-900/40' },
+    valid:      { label: 'valid',      cls: 'text-emerald-700 border-emerald-900/40' },
+    invalid:    { label: `${validationErrors.length} error${validationErrors.length !== 1 ? 's' : ''}`, cls: 'text-red-700 border-red-900/40' },
+    conflict:   { label: 'conflict',   cls: 'text-amber-500/70 border-amber-700/40' },
+    submitting: { label: 'submitting', cls: 'text-blue-600/70 border-blue-900/40' },
+    submitted:  { label: 'submitted',  cls: 'text-emerald-700 border-emerald-900/40' },
+  }[editorState] || { label: 'empty', cls: 'text-[#333] border-[#1e1e1e]' };
+
+  /* ── Line count for gutter ── */
+  const lineCount = jsonInput ? jsonInput.split('\n').length : 1;
 
   function handleInputChange(e) {
     setJsonInput(e.target.value);
@@ -581,14 +675,12 @@ export default function NewPlanPage({ onBack }) {
 
       {/* ── Notice bar ── */}
       <div
-        className="relative flex items-center gap-2 px-6 py-2 border-b border-[#1a1a1a] bg-amber-950/10 flex-shrink-0"
+        className="flex items-center gap-2 px-6 py-1.5 border-b border-[#161616] flex-shrink-0"
         data-testid="notice-bar"
       >
-        <div className="absolute inset-y-0 left-0 w-[2px] bg-amber-500/40" />
-        <TriangleAlert size={10} className="text-amber-600 flex-shrink-0 ml-1" />
-        <span className="text-[11px] text-slate-500">
-          Submitting creates plan and pass records only.{' '}
-          <span className="text-slate-600">No runs are created. No executor is dispatched.</span>
+        <TriangleAlert size={9} className="text-amber-700/70 flex-shrink-0" />
+        <span className="text-[10px] font-mono text-[#3a3a3a]">
+          Submitting creates plan and pass records only — no runs, no executor dispatch.
         </span>
       </div>
 
@@ -603,25 +695,61 @@ export default function NewPlanPage({ onBack }) {
           style={{ width: '500px' }}
           data-testid="left-pane"
         >
-          {/* Pane header */}
-          <div className="px-5 pt-4 pb-3 border-b border-[#1a1a1a] flex-shrink-0">
-            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-600 mb-1">
-              Plan of Passes JSON
+          {/* Pane header — editor title + state badge */}
+          <div className="px-5 pt-3 pb-3 border-b border-[#1a1a1a] flex-shrink-0 bg-[#0b0b0b]">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-600">
+                  Plan of Passes JSON
+                </span>
+                <span className="font-mono text-[8px] text-[#2a2a2a] border border-[#1e1e1e] px-1.5 py-px rounded-sm bg-[#0e0e0e]">
+                  application/json
+                </span>
+              </div>
+              <span
+                className={`font-mono text-[9px] px-1.5 py-px rounded-sm border ${editorStateCfg.cls}`}
+                data-testid="editor-state-badge"
+              >
+                {editorStateCfg.label}
+              </span>
             </div>
-            <div className="text-[11px] text-slate-600 leading-snug">
+            <p className="text-[10px] text-slate-700 leading-snug">
               Paste the reviewed structured Plan of Passes JSON produced by the Planner.
-            </div>
+            </p>
           </div>
 
-          {/* Textarea — fills remaining height */}
-          <div className="flex-1 min-h-0 relative" data-testid="json-editor-container">
+          {/* Editor body: line-number gutter + textarea */}
+          <div className="flex flex-1 min-h-0 bg-[#0c0c0c]" data-testid="json-editor-container">
+            {/* Line-number gutter */}
+            <div
+              ref={lineNumRef}
+              className="flex-shrink-0 overflow-hidden select-none border-r border-[#1a1a1a] bg-[#090909]"
+              style={{ width: '36px' }}
+              aria-hidden="true"
+            >
+              <div className="pt-4 pb-4">
+                {Array.from({ length: lineCount }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="font-mono text-[10px] text-right pr-2.5 leading-[1.65rem] text-[#232323]"
+                  >
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Textarea */}
             <textarea
               value={jsonInput}
               onChange={handleInputChange}
+              onScroll={(e) => {
+                if (lineNumRef.current) lineNumRef.current.scrollTop = e.target.scrollTop;
+              }}
               placeholder={PLACEHOLDER}
               spellCheck={false}
               readOnly={isFinal}
-              className={`absolute inset-0 w-full h-full font-mono text-[11px] bg-transparent text-slate-300 resize-none focus:outline-none placeholder-[#2a2a2a] leading-relaxed px-5 py-4 overflow-auto ${
+              className={`flex-1 font-mono text-[11px] bg-transparent text-slate-300 resize-none focus:outline-none placeholder-[#1e1e1e] leading-[1.65rem] px-4 py-4 overflow-auto ${
                 isFinal ? 'opacity-40 cursor-default' : ''
               }`}
               style={{ tabSize: 2 }}
@@ -629,91 +757,99 @@ export default function NewPlanPage({ onBack }) {
             />
           </div>
 
-          {/* Status micro-bar */}
+          {/* Editor micro-bar: char count + validation state */}
           <div
-            className="flex items-center justify-between px-5 py-1.5 border-t border-[#161616] flex-shrink-0"
+            className="flex items-center justify-between px-4 py-1 border-t border-[#141414] flex-shrink-0 bg-[#0a0a0a]"
           >
-            <span className="font-mono text-[10px] text-slate-800">
-              {hasInput ? `${jsonInput.length} chars` : 'empty'}
+            <span className="font-mono text-[9px] text-[#292929]">
+              {hasInput ? `${jsonInput.length.toLocaleString()} chars · ${lineCount} lines` : 'empty'}
             </span>
-            <span className="font-mono text-[10px]">
+            <span className="font-mono text-[9px]">
               {formState === 'validated' && (
-                <span className="text-emerald-700">valid</span>
+                <span className="text-emerald-800">valid</span>
               )}
               {formState === 'validation_failed' && (
-                <span className="text-red-700">{validationErrors.length} errors</span>
+                <span className="text-red-800">{validationErrors.length} error{validationErrors.length !== 1 ? 's' : ''}</span>
               )}
               {formState === 'conflict' && (
-                <span className="text-amber-700">conflict</span>
+                <span className="text-amber-800">conflict</span>
               )}
             </span>
           </div>
 
-          {/* Validate + Clear */}
-          <div
-            className="flex items-center gap-2 px-5 py-3 border-t border-[#1a1a1a] flex-shrink-0"
-          >
-            <button
-              onClick={handleValidate}
-              disabled={!canValidate}
-              className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 border rounded-sm transition-colors ${
-                canValidate
-                  ? 'text-slate-200 border-[#3a3a3a] bg-[#1a1a1a] hover:bg-[#222] hover:text-white'
-                  : 'text-slate-700 border-[#1a1a1a] cursor-not-allowed'
-              }`}
-              data-testid="validate-btn"
-            >
-              {formState === 'validating' ? (
-                <RefreshCw size={10} className="animate-spin" />
-              ) : (
-                <CheckCircle2 size={10} />
-              )}
-              {formState === 'validating' ? 'Validating...' : 'Validate Plan'}
-            </button>
-            <button
-              onClick={handleClear}
-              disabled={!hasInput && formState === 'draft'}
-              className={`text-[11px] px-3 py-1.5 border rounded-sm transition-colors ${
-                hasInput || formState !== 'draft'
-                  ? 'text-slate-500 border-[#2a2a2a] hover:border-[#3a3a3a] hover:text-slate-300'
-                  : 'text-slate-700 border-[#1a1a1a] cursor-not-allowed'
-              }`}
-              data-testid="clear-btn"
-            >
-              Clear
-            </button>
-          </div>
-
-          {/* Submit area */}
-          <div className="px-5 pb-4 pt-3 border-t border-[#191919] flex-shrink-0">
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit || formState === 'submitting'}
-              className={`w-full flex items-center justify-center gap-2 text-[11px] px-4 py-2.5 border rounded-sm transition-colors ${
-                canSubmit && formState !== 'submitting'
-                  ? 'text-emerald-300 border-emerald-700/50 bg-emerald-950/25 hover:bg-emerald-950/50 hover:border-emerald-600/60 hover:text-emerald-200'
-                  : formState === 'submitted'
-                  ? 'text-emerald-700 border-emerald-900/40 cursor-default'
-                  : 'text-slate-700 border-[#1e1e1e] cursor-not-allowed'
-              }`}
-              data-testid="submit-btn"
-            >
-              {formState === 'submitting' ? (
-                <>
+          {/* ── Action footer: Validate · Clear · ─ · Submit ── */}
+          <div className="flex-shrink-0 border-t border-[#1a1a1a]">
+            {/* Row 1: Validate + Clear */}
+            <div className="flex items-center gap-2 px-5 py-2.5">
+              <button
+                onClick={handleValidate}
+                disabled={!canValidate}
+                className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 border rounded-sm transition-colors ${
+                  canValidate
+                    ? 'text-slate-200 border-[#3a3a3a] bg-[#191919] hover:bg-[#222] hover:border-[#444] hover:text-white'
+                    : 'text-[#2e2e2e] border-[#1c1c1c] cursor-not-allowed'
+                }`}
+                data-testid="validate-btn"
+              >
+                {formState === 'validating' ? (
                   <RefreshCw size={10} className="animate-spin" />
-                  Submitting...
-                </>
-              ) : formState === 'submitted' ? (
-                <>
-                  <CheckCircle2 size={10} className="text-emerald-700" />
-                  Submitted
-                </>
-              ) : (
-                'Submit Reviewed Plan'
+                ) : (
+                  <CheckCircle2 size={10} />
+                )}
+                {formState === 'validating' ? 'Validating...' : 'Validate Plan'}
+              </button>
+              <button
+                onClick={handleClear}
+                disabled={!hasInput && formState === 'draft'}
+                className={`text-[11px] px-3 py-1.5 border rounded-sm transition-colors ${
+                  hasInput || formState !== 'draft'
+                    ? 'text-slate-600 border-[#252525] hover:border-[#333] hover:text-slate-300'
+                    : 'text-[#272727] border-[#1a1a1a] cursor-not-allowed'
+                }`}
+                data-testid="clear-btn"
+              >
+                Clear
+              </button>
+            </div>
+
+            {/* Row 2: Submit — separated by a hairline */}
+            <div className="px-5 pb-4 pt-2 border-t border-[#161616]">
+              <button
+                onClick={handleSubmit}
+                disabled={!canSubmit || formState === 'submitting'}
+                className={`w-full flex items-center justify-center gap-2 text-[11px] font-medium px-4 py-2.5 border rounded-sm transition-colors ${
+                  canSubmit && formState !== 'submitting'
+                    ? 'text-emerald-300 border-emerald-700/50 bg-emerald-950/25 hover:bg-emerald-950/45 hover:border-emerald-600/60 hover:text-emerald-200'
+                    : formState === 'submitted'
+                    ? 'text-emerald-800 border-emerald-900/30 cursor-default'
+                    : 'text-[#2a2a2a] border-[#1c1c1c] cursor-not-allowed'
+                }`}
+                data-testid="submit-btn"
+              >
+                {formState === 'submitting' ? (
+                  <>
+                    <RefreshCw size={10} className="animate-spin" />
+                    Submitting...
+                  </>
+                ) : formState === 'submitted' ? (
+                  <>
+                    <CheckCircle2 size={10} className="text-emerald-800" />
+                    Submitted
+                  </>
+                ) : (
+                  'Submit Reviewed Plan'
+                )}
+              </button>
+              {!canSubmit && formState !== 'submitted' && (
+                <div className="text-[9px] font-mono text-[#252525] text-center mt-1.5">
+                  {hasInput ? 'validate plan to enable submission' : 'paste JSON · validate · submit'}
+                </div>
               )}
-            </button>
-            <div className="text-[10px] text-slate-700 text-center mt-1.5 leading-snug">
-              Creates managed plan/pass records. Does not create runs.
+              {canSubmit && (
+                <div className="text-[9px] font-mono text-emerald-900/60 text-center mt-1.5">
+                  creates plan and pass records — no runs
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -723,27 +859,40 @@ export default function NewPlanPage({ onBack }) {
           className="flex-1 min-w-0 flex flex-col overflow-hidden"
           data-testid="right-pane"
         >
-          {/* Sticky right-pane header */}
+          {/* Sticky right-pane header — matches left pane density */}
           <div
-            className="flex items-center gap-2 px-5 py-3 border-b border-[#1a1a1a] flex-shrink-0 bg-[#0e0e0e]"
+            className="flex items-center justify-between px-5 py-3 border-b border-[#1a1a1a] flex-shrink-0 bg-[#0b0b0b]"
             data-testid="right-pane-header"
           >
-            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-600">
-              {rightLabel}
+            <div className="flex items-center gap-2.5">
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-600">
+                {rightLabel}
+              </span>
+              {/* State dot */}
+              {formState === 'validated' && (
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              )}
+              {formState === 'validation_failed' && (
+                <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              )}
+              {formState === 'conflict' && (
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              )}
+              {formState === 'submitted' && (
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              )}
+            </div>
+            {/* Right: sub-state descriptor */}
+            <span className="font-mono text-[9px] text-slate-700">
+              {formState === 'draft' && !hasInput && 'not run'}
+              {formState === 'draft' && hasInput  && 'not run · needs validation'}
+              {formState === 'validating'        && 'running…'}
+              {formState === 'validated'         && 'passed'}
+              {formState === 'validation_failed' && `failed · ${validationErrors.length} error${validationErrors.length !== 1 ? 's' : ''}`}
+              {formState === 'conflict'          && 'conflict · plan id exists'}
+              {formState === 'submitting'        && 'submitting…'}
+              {formState === 'submitted'         && 'plan created'}
             </span>
-            {/* State dot */}
-            {formState === 'validated' && (
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 ml-1" />
-            )}
-            {formState === 'validation_failed' && (
-              <div className="h-1.5 w-1.5 rounded-full bg-red-500 ml-1" />
-            )}
-            {formState === 'conflict' && (
-              <div className="h-1.5 w-1.5 rounded-full bg-amber-400 ml-1" />
-            )}
-            {formState === 'submitted' && (
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 ml-1" />
-            )}
           </div>
 
           {/* Scrollable content */}

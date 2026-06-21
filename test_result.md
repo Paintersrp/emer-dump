@@ -102,43 +102,28 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Create a multi-screen workflow board for Relay's managed-plan flow showing 10 screen states side-by-side in sequence using the approved dark technical Relay UI style. Each screen should show: page title, current state badge, primary action, key explanatory copy, and only the relevant UI for that step."
+user_problem_statement: "Refine the Relay New Plan / Submit Plan page. Keep existing structure, dark technical UI, top shell, Plans/Runs nav, breadcrumb, title, Draft badge, two-pane layout, and warning copy. Improvements: (1) Better two-pane balance with consistent panel headers. (2) Improved JSON editor with compact header (state badge + application/json hint + helper text), line-number gutter, better placeholder. (3) Improved action placement (Validate/Clear/Submit as a controlled flow). (4) Structured empty validation panel (checklist + Plan Preview/Derived Passes/Submission Result scaffolding in unavailable state). (5) Compact warning strip. All states preserved: draft, validating, validated, validation_failed, conflict, submitting, submitted."
 
 frontend:
-  - task: "WorkflowBoardPage - 10-screen managed plan flow board"
+  - task: "NewPlanPage refinements - editor header, line numbers, validation framework, action flow"
     implemented: true
     working: true
-    file: "frontend/src/components/relay/WorkflowBoardPage.js"
+    file: "frontend/src/components/relay/NewPlanPage.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "main"
-        comment: "Implemented WorkflowBoardPage.js with 10 mini-screen frames showing the managed plan flow. Route: /plans/board. Accessible via 'Flow Board' button on PlansRegistryPage. Board shows: Plans Registry, New Plan (Draft), New Plan (Validated), Plan Detail (submitted), Pass Detail (ready), New Run (prefilled), Run Workbench (execute stage), Audit Decision, Plan Detail (progress), Plan Detail (completion ready). Each frame has step label, mini screen, and annotation strip with primary action + key copy. Also fixed webpack-dev-server v5 compatibility issue (onAfterSetupMiddleware -> setupMiddlewares, https -> server.type)."
+        comment: "Refined NewPlanPage.js: (1) Added line number gutter with synchronized scroll. (2) New editor header with application/json type hint + editor state badge (empty/edited/valid/invalid/conflict). (3) Compact warning strip (one-liner, mono font, restrained gold). (4) Replaced empty void RightEmpty with RightDraftEmpty: structured validation framework (checks checklist + 3 scaffolded sections: Plan Preview, Derived Passes, Submission Result — all in quiet unavailable state). (5) Right pane header now shows section label + sub-state descriptor. (6) Action footer refactored: Validate/Clear in top row, Submit in separated bottom row with context-aware hint text. All existing form states preserved."
       - working: true
         agent: "testing"
-        comment: "TESTED SUCCESSFULLY. All requirements verified: (1) Page loads at /plans/board with correct title 'Managed Plan Flow', (2) Shows 'Screen Reference' label and '10 screens' badge, (3) All 4 phase labels visible (PLAN CREATION, PASS DISPATCH, RUN EXECUTION, PLAN PROGRESS), (4) All 10 step pills (1-10) visible and clickable in header, (5) Horizontally scrollable board with mini-screen frames working correctly, (6) First 5 screens visible with correct content (Plans Registry, New Plan Draft, New Plan Validated, Plan Detail Active, Pass Detail Ready), (7) Step pill navigation (6-10) scrolls board to reveal correct screens, (8) All screens 6-10 verified with correct content (New Run with Plan Association, Run Workbench with EXECUTION RUNNING, Audit Decision with AUDIT READY, Plan Detail with progress, Plan Detail with COMPLETION READY), (9) Annotation strips with PRIMARY ACTION labels visible on all frames, (10) Back button '← Plans' navigates correctly to /plans. No issues found."
-
-  - task: "Flow Board button on PlansRegistryPage nav"
-    implemented: true
-    working: true
-    file: "frontend/src/components/relay/PlansRegistryPage.js"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Added 'Flow Board' button to PlansRegistryPage top nav, linking to /plans/board route."
-      - working: true
-        agent: "testing"
-        comment: "TESTED SUCCESSFULLY. Flow Board button (data-testid='nav-flow-board-btn') is visible in top nav after New Plan button. Clicking the button correctly navigates to /plans/board. Button text displays as 'Flow Board'. No issues found."
+        comment: "Comprehensive testing completed for all 4 states. STATE 1 (Empty/Draft): ✓ Compact warning strip verified with one-liner text. ✓ Editor header shows 'PLAN OF PASSES JSON' with 'application/json' badge and 'empty' state badge. ✓ Line numbers visible in gutter. ✓ Right panel shows structured validation framework: 'Validation not run' header, message about pasting JSON, 4 inactive checkbox items (JSON parses successfully, Required plan fields present, Passes derive correctly, Dependencies resolve), 3 scaffold sections (PLAN PREVIEW/DERIVED PASSES/SUBMISSION RESULT all showing unavailable state). ✓ Right pane header shows 'VALIDATION' and 'not run'. ✓ Validate button disabled, Submit button disabled with hint text. STATE 2 (Edited): ✓ Editor state badge changed to 'edited'. ✓ Right pane sub-state shows 'not run · needs validation'. ✓ Validate button enabled. ✓ Submit button still disabled. STATE 3 (Validated): ✓ Editor state badge changed to 'valid'. ✓ Form status badge shows 'Validated'. ✓ Right pane shows plan preview with Title, Plan ID, Repo, Passes fields. ✓ Derived Passes section shows 2 passes correctly. ✓ Submit button enabled. ✓ Right pane header shows 'PLAN PREVIEW' and 'passed'. STATE 4 (Submitted): ✓ Right pane shows submission success panel with 'PLAN SUBMITTED'. ✓ 'Open Plan' and 'View Plans' buttons appear. ✓ Editor state badge shows 'submitted'. ✓ Form status badge shows 'Submitted'. All refinements working perfectly. Minor: WebSocket connection errors in console (expected, doesn't affect functionality)."
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 4
   run_ui: true
 
 test_plan:
@@ -149,6 +134,6 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "Implemented WorkflowBoardPage.js - a horizontally scrollable design board showing all 10 screen states of the managed plan flow. Route /plans/board added to App.js. 'Flow Board' button added to PlansRegistryPage nav. Also fixed webpack-dev-server v5 compatibility issue to get frontend running. Please test: 1) Navigate to /plans and click 'Flow Board' button - should navigate to /plans/board. 2) Verify board shows 10 screen frames in a horizontal scroll. 3) Click step pills (1-10) in header to scroll to specific screens. 4) Verify each mini-screen shows correct content for its step. 5) Use back button or Plans nav to return to /plans."
+    message: "Refined NewPlanPage.js (not a redesign, just targeted improvements). Please test these states: 1) Empty/Draft state at /plans/new — verify: compact warning strip shows one-liner text, editor header shows 'PLAN OF PASSES JSON' + 'application/json' badge + 'empty' state badge, right panel shows 'Validation not run' header + message + inactive checklist (4 items) + 3 scaffold sections (Plan Preview/Derived Passes/Submission Result each showing unavailable state). 2) After typing/pasting into editor — verify: editor state badge changes to 'edited', right panel sub-state shows 'not run · needs validation'. 3) After clicking Validate Plan with valid JSON — verify: validated state shows plan preview + derived passes in right panel, Submit button becomes enabled. 4) After submitting — verify: submission success shows in right panel. Test the action buttons: Validate Plan, Clear, Submit Reviewed Plan. Verify all data-testid attributes still work: json-input, validate-btn, clear-btn, submit-btn, right-empty-state, right-pane-header."
   - agent: "testing"
-    message: "TESTING COMPLETE - ALL TESTS PASSED ✅. Comprehensive testing performed on WorkflowBoardPage component. All requirements from review request verified successfully: (1) Plans Registry loads correctly with table, (2) Flow Board button visible in top nav after New Plan button, (3) Navigation to /plans/board works, (4) Page displays 'Managed Plan Flow' title, 'Screen Reference' label, and '10 screens' badge, (5) All 4 phase labels visible (PLAN CREATION, PASS DISPATCH, RUN EXECUTION, PLAN PROGRESS), (6) All 10 step pills (1-10) visible and functional in header, (7) Horizontally scrollable board with mini-screen frames working correctly, (8) First 5 screens visible with correct content verified, (9) Step pill navigation (6-10) scrolls to reveal correct screens, (10) All screens 6-10 content verified (New Run, Run Workbench, Audit Decision, Plan Detail progress/completion), (11) Annotation strips with PRIMARY ACTION labels visible, (12) Back button navigation to /plans works correctly. No issues found. Feature is production-ready."
+    message: "Testing complete. All 4 states tested successfully with comprehensive verification of all UI elements, state transitions, and user flows. All refinements are working as expected: compact warning strip, editor header with badges, line number gutter, structured validation framework, action button flow, and state transitions. No critical issues found. Ready for user acceptance."
