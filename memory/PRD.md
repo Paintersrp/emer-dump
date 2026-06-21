@@ -230,3 +230,14 @@ onProceedToAudit: () => void
 - [ ] Collapsible pipeline steps on hover
 - [ ] Transition animations between pipeline states
 - [ ] Keyboard navigation for stage tabs
+
+### WorkflowBoardPage.js (Completed — June 21, 2026)
+- **Route**: `/plans/board` (accessible via "Flow Board" button on PlansRegistryPage)
+- **Purpose**: Horizontally scrollable multi-screen design board showing the complete managed-plan flow in 10 sequential screen states
+- **10 screens**: Plans Registry → New Plan (Draft) → New Plan (Validated) → Plan Detail (submitted) → Pass Detail (ready) → New Run (prefilled) → Run Workbench (execute) → Audit Decision → Plan Detail (progress) → Plan Detail (completion-ready)
+- **Each frame includes**: Step number, screen title, state badge, mini high-fidelity screen, annotation strip (primary action + explanatory copy)
+- **Navigation**: Step pills (1–10) in header for quick scroll-to; back button returns to /plans
+- **Phase groupings**: PLAN CREATION (1–3), PASS DISPATCH (4–6), RUN EXECUTION (7–8), PLAN PROGRESS (9–10)
+- **Shared primitives**: MiniNav, MiniBadge, MiniStateCard, MiniSegBar, MiniPassRow, MiniStageTabs, MiniRunHeader — all faithful to Relay design tokens
+- **Design style**: bg-[#0e0e0e], same dark technical Relay aesthetic, monospace IDs, blue/amber/cyan/emerald accents
+- All 10 screens verified working by testing agent
