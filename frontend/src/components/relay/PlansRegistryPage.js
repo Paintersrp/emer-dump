@@ -359,6 +359,58 @@ function PlanRow({ plan }) {
 }
 
 /* ─────────────────────────────────────────────────────
+   PlanMobileRow — compact stacked row (mobile)
+───────────────────────────────────────────────────── */
+function PlanMobileRow({ plan }) {
+  const navigate = useNavigate();
+  const hasAttention = Boolean(plan.attention);
+  return (
+    <button
+      type="button"
+      data-testid={`plan-mobile-row-${plan.planNumber}`}
+      onClick={() => navigate(`/plans/${plan.planId}`)}
+      className="w-full text-left border-b border-[#161616] px-4 py-3 flex flex-col gap-2 hover:bg-[#111111] active:bg-[#141414] transition-colors"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span
+          className={`text-sm font-medium leading-snug ${hasAttention ? "text-slate-100" : "text-slate-400"}`}
+        >
+          {plan.title}
+        </span>
+        <ChevronRight size={14} className="text-slate-700 flex-shrink-0 mt-0.5" />
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <StatusPill status={plan.status} />
+        <AttentionPill attention={plan.attention} />
+        <PassProgressBar complete={plan.passesComplete} total={plan.passesTotal} />
+      </div>
+      {plan.currentPass && (
+        <div className="text-[11px] text-slate-500 truncate">
+          <span className="font-mono text-[10px] text-slate-700">{plan.currentPass.id}</span>
+          {" · "}
+          {plan.currentPass.title}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono text-[10px] text-slate-700">
+        <span>{plan.planId}</span>
+        <span className="text-slate-800">·</span>
+        <span>{plan.repo}/{plan.branch}</span>
+        <span className="text-slate-800">·</span>
+        <span className="text-slate-600">{plan.updatedAt}</span>
+      </div>
+    </button>
+  );
+}
+
+function MobileMessage({ children, testId }) {
+  return (
+    <div className="px-6 py-16 text-center flex flex-col items-center gap-2.5" data-testid={testId}>
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
    Skeleton row (loading state)
 ───────────────────────────────────────────────────── */
 function SkeletonRow() {
@@ -495,10 +547,10 @@ export default function PlansRegistryPage({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-slate-100">Relay</span>
-          <span className="text-slate-700 text-xs">·</span>
-          <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
+          <span className="text-slate-700 text-xs hidden sm:inline">·</span>
+          <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">v1.0.4-stable</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Plans — active on this page */}
           <button
             data-testid="nav-plans-btn"
@@ -616,10 +668,10 @@ export default function PlansRegistryPage({
         })}
       </div>
 
-      {/* ── Plans table ── */}
+      {/* ── Plans table (desktop) + mobile list ── */}
       <div className="flex-1 overflow-auto" data-testid="plans-table-container">
         <table
-          className="w-full border-collapse"
+          className="hidden lg:table w-full border-collapse"
           style={{ minWidth: "820px" }}
           data-testid="plans-table"
         >
@@ -669,6 +721,44 @@ export default function PlansRegistryPage({
             )}
           </tbody>
         </table>
+
+        {/* Mobile stacked list */}
+        <div className="lg:hidden" data-testid="plans-mobile-list">
+          {isLoading ? (
+            <MobileMessage testId="plans-mobile-loading">
+              <RefreshCw size={16} className="text-slate-700 animate-spin" />
+              <span className="text-xs text-slate-600">Loading plans...</span>
+            </MobileMessage>
+          ) : error ? (
+            <MobileMessage testId="plans-mobile-error">
+              <AlertCircle size={15} className="text-red-500/50" />
+              <span className="text-xs text-slate-500">Plans failed to load.</span>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  <RefreshCw size={11} />
+                  Retry
+                </button>
+              )}
+            </MobileMessage>
+          ) : filteredPlans.length === 0 ? (
+            <MobileMessage testId="plans-mobile-empty">
+              <Inbox size={18} className="text-slate-700" />
+              <span className="text-sm text-slate-400">No managed plans yet.</span>
+              <button
+                onClick={() => navigate("/plans/new")}
+                className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                <Plus size={11} />
+                New Plan
+              </button>
+            </MobileMessage>
+          ) : (
+            filteredPlans.map((plan) => <PlanMobileRow key={plan.id} plan={plan} />)
+          )}
+        </div>
       </div>
 
       {/* ── Footer ── */}

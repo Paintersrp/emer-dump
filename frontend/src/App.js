@@ -572,10 +572,10 @@ function RelayShell({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-slate-100">Relay</span>
-          <span className="text-slate-700 text-xs">·</span>
-          <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
+          <span className="text-slate-700 text-xs hidden sm:inline">·</span>
+          <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">v1.0.4-stable</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             data-testid="nav-plans-btn"
             onClick={() => navigate("/plans")}
@@ -654,7 +654,7 @@ function RelayShell({
         )}
 
         {/* Stage navigation — clickable between demo pages */}
-        <div className="flex items-center" data-testid="stage-tabs">
+        <div className="flex items-center overflow-x-auto" data-testid="stage-tabs">
           {STAGES.map((stage) => (
             <button
               key={stage.id}

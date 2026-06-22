@@ -268,10 +268,10 @@ export default function PlanDetailPage({ plan, onBack, onNavigateToPass, onCreat
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-slate-100">Relay</span>
-          <span className="text-slate-700 text-xs">·</span>
-          <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
+          <span className="text-slate-700 text-xs hidden sm:inline">·</span>
+          <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">v1.0.4-stable</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             data-testid="nav-plans-btn"
             onClick={() => navigate('/plans')}
@@ -371,11 +371,11 @@ export default function PlanDetailPage({ plan, onBack, onNavigateToPass, onCreat
 
       {/* ── Scrollable content ── */}
       <div className="flex-1 overflow-auto" data-testid="plan-detail-content">
-        <div className="max-w-5xl mx-auto px-6 py-5 space-y-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 space-y-4">
 
           {/* ── State card ── */}
           <div
-            className="relative border border-[#1e1e1e] bg-[#111111] flex items-start justify-between gap-4 px-5 py-4"
+            className="relative border border-[#1e1e1e] bg-[#111111] flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 px-5 py-4"
             data-testid="plan-summary-card"
           >
             {/* Colored left accent */}

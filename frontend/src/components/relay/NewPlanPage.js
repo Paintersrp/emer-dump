@@ -613,10 +613,10 @@ export default function NewPlanPage({ onBack }) {
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-slate-100">Relay</span>
-          <span className="text-slate-700 text-xs">·</span>
-          <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
+          <span className="text-slate-700 text-xs hidden sm:inline">·</span>
+          <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">v1.0.4-stable</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             data-testid="nav-plans-btn"
             onClick={() => navigate('/plans')}
@@ -686,13 +686,12 @@ export default function NewPlanPage({ onBack }) {
 
       {/* ── Two-pane content ── */}
       <div
-        className="flex flex-1 min-h-0 overflow-hidden"
+        className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden"
         data-testid="two-pane-content"
       >
         {/* ──────── Left pane: JSON editor ──────── */}
         <div
-          className="flex flex-col flex-shrink-0 border-r border-[#1a1a1a]"
-          style={{ width: '500px' }}
+          className="flex flex-col w-full lg:w-[500px] flex-shrink-0 border-b border-[#1a1a1a] lg:border-b-0 lg:border-r lg:border-[#1a1a1a]"
           data-testid="left-pane"
         >
           {/* Pane header — editor title + state badge */}
@@ -719,7 +718,7 @@ export default function NewPlanPage({ onBack }) {
           </div>
 
           {/* Editor body: line-number gutter + textarea */}
-          <div className="flex flex-1 min-h-0 bg-[#0c0c0c]" data-testid="json-editor-container">
+          <div className="flex flex-1 min-h-[280px] lg:min-h-0 bg-[#0c0c0c]" data-testid="json-editor-container">
             {/* Line-number gutter */}
             <div
               ref={lineNumRef}
@@ -856,7 +855,7 @@ export default function NewPlanPage({ onBack }) {
 
         {/* ──────── Right pane: validation / preview ──────── */}
         <div
-          className="flex-1 min-w-0 flex flex-col overflow-hidden"
+          className="w-full lg:flex-1 min-w-0 flex flex-col lg:overflow-hidden"
           data-testid="right-pane"
         >
           {/* Sticky right-pane header — matches left pane density */}
@@ -896,7 +895,7 @@ export default function NewPlanPage({ onBack }) {
           </div>
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-auto" data-testid="right-pane-content">
+          <div className="lg:flex-1 lg:overflow-auto" data-testid="right-pane-content">
             {rightContent}
           </div>
         </div>

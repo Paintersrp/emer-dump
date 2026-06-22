@@ -5,8 +5,8 @@ import { Copy } from "lucide-react";
 const PASS_STATUS_PRESENTATION = {
   planned: {
     label: "Planned",
-    badgeCls: "bg-amber-500/10 text-amber-400 border border-amber-700/40",
-    textCls: "text-amber-400",
+    badgeCls: "bg-slate-500/10 text-slate-400 border border-slate-700/40",
+    textCls: "text-slate-400",
   },
   in_progress: {
     label: "In Progress",

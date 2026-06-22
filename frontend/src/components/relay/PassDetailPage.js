@@ -576,8 +576,7 @@ function Inspector({ pass, plan, allPasses, runs, sequence, totalPasses }) {
 
   return (
     <div
-      className="flex-shrink-0 flex flex-col border-l border-[#1a1a1a] bg-[#0a0a0a] overflow-hidden"
-      style={{ width: '268px' }}
+      className="w-full lg:w-[268px] flex-shrink-0 flex flex-col border-t lg:border-t-0 lg:border-l border-[#1a1a1a] bg-[#0a0a0a] lg:overflow-hidden"
       data-testid="inspector-rail"
     >
       {/* Tab bar */}
@@ -599,7 +598,7 @@ function Inspector({ pass, plan, allPasses, runs, sequence, totalPasses }) {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-auto" data-testid="inspector-content">
+      <div className="lg:flex-1 lg:overflow-auto" data-testid="inspector-content">
 
         {/* ── Details tab ── */}
         {activeTab === 'details' && (
@@ -730,10 +729,10 @@ export default function PassDetailPage({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-slate-100">Relay</span>
-          <span className="text-slate-700 text-xs">·</span>
-          <span className="text-[11px] font-mono text-slate-500">v1.0.4-stable</span>
+          <span className="text-slate-700 text-xs hidden sm:inline">·</span>
+          <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">v1.0.4-stable</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             data-testid="nav-plans-btn"
             onClick={() => navigate('/plans')}
@@ -830,12 +829,12 @@ export default function PassDetailPage({
 
       {/* ── Two-column content ── */}
       <div
-        className="flex flex-1 min-h-0 overflow-hidden"
+        className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden"
         data-testid="pass-detail-content"
       >
         {/* Main scrollable column */}
-        <div className="flex-1 overflow-auto min-w-0" data-testid="main-column">
-          <div className="max-w-3xl mx-auto px-6 py-5 space-y-4">
+        <div className="w-full lg:flex-1 lg:overflow-auto min-w-0" data-testid="main-column">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5 space-y-4">
             <StateCard
               pass={pass}
               plan={plan}

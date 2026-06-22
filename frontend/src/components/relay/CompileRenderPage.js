@@ -337,14 +337,14 @@ export default function CompileRenderPage({
 
   return (
     <div
-      className="flex flex-1 min-h-0 overflow-hidden"
+      className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden"
       data-testid="compile-render-page"
     >
       {/* ─────────────────────────────────────────────
           Main content pane
       ───────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto min-w-0">
-        <div className="px-6 pt-5 pb-8 space-y-5 max-w-3xl">
+      <div className="w-full lg:flex-1 lg:overflow-y-auto min-w-0">
+        <div className="px-4 sm:px-6 pt-5 pb-8 space-y-5 max-w-3xl">
 
           {/* ── Stage header ──────────────────────── */}
           <div>
@@ -442,13 +442,13 @@ export default function CompileRenderPage({
           Right Inspector panel
       ───────────────────────────────────────────── */}
       <div
-        className="w-72 border-l border-[#1e1e1e] bg-[#0b0b0b] flex flex-col flex-shrink-0 overflow-hidden"
+        className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-[#1e1e1e] bg-[#0b0b0b] flex flex-col flex-shrink-0 lg:overflow-hidden"
         data-testid="inspector-panel"
       >
         <Tabs
           value={tab}
           onValueChange={setTab}
-          className="flex flex-col h-full"
+          className="flex flex-col lg:h-full"
         >
           {/* Tab strip */}
           <TabsList
@@ -468,7 +468,7 @@ export default function CompileRenderPage({
           </TabsList>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="lg:flex-1 lg:overflow-y-auto">
 
             <TabsContent
               value="details"

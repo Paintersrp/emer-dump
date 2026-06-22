@@ -862,13 +862,13 @@ export default function AuditPage({
 
   return (
     <div
-      className="flex flex-1 min-h-0 overflow-hidden"
+      className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden"
       data-testid="audit-page"
     >
       {/* ─────────────────────────────────────────
           Main content pane
       ───────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto min-w-0">
+      <div className="w-full lg:flex-1 lg:overflow-y-auto min-w-0">
         <div className="px-6 pt-5 pb-8 space-y-5 max-w-3xl">
 
           {/* Stage header */}
@@ -1163,10 +1163,10 @@ export default function AuditPage({
           Right inspector panel
       ───────────────────────────────────────── */}
       <div
-        className="w-72 border-l border-[#1e1e1e] bg-[#0b0b0b] flex flex-col flex-shrink-0 overflow-hidden"
+        className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-[#1e1e1e] bg-[#0b0b0b] flex flex-col flex-shrink-0 lg:overflow-hidden"
         data-testid="inspector-panel"
       >
-        <Tabs value={tab} onValueChange={setTab} className="flex flex-col h-full">
+        <Tabs value={tab} onValueChange={setTab} className="flex flex-col lg:h-full">
           <TabsList
             data-testid="inspector-tabs-list"
             className="flex h-auto bg-transparent rounded-none border-b border-[#1e1e1e] p-0 flex-shrink-0"
@@ -1183,7 +1183,7 @@ export default function AuditPage({
             ))}
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="lg:flex-1 lg:overflow-y-auto">
 
             <TabsContent
               value="details"
