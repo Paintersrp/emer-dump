@@ -1,109 +1,141 @@
 {
-  "project_name": "Relay Plan Detail Page",
-  "theme": "dark",
-  "archetype": "4 (Swiss & High-Contrast / Technical Workspace)",
-  "design_philosophy": "Operational, terminal-adjacent style. Dense but readable. Crisp hierarchy with restrained borders. Uses color strictly for status meaning, avoiding decorative gradients or typical project-management aesthetics.",
+  "theme": "Dark Technical Operator Workbench",
+  "archetype": "Swiss & High-Contrast (Dark Mode Dev Tool)",
+  "typography": {
+    "font_families": {
+      "ui": "Inter, sans-serif",
+      "mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    },
+    "scale": {
+      "xs": "text-xs leading-4",
+      "sm": "text-sm leading-5",
+      "base": "text-base leading-6",
+      "lg": "text-lg leading-7",
+      "xl": "text-xl leading-8",
+      "page_title": "text-lg font-semibold tracking-tight text-white",
+      "section_title": "text-sm font-medium tracking-wide uppercase text-zinc-400"
+    },
+    "rules": {
+      "prose": "Use UI font (Inter) for standard labels and prose.",
+      "mono": "Use monospace ONLY for IDs, repo, branch, paths, JSON, code, run IDs, plan IDs, and pass IDs."
+    }
+  },
   "colors": {
-    "background": {
-      "page": "bg-[#0A0A0A] or bg-zinc-950",
-      "surface": "bg-[#111111] or bg-zinc-900",
-      "surface_hover": "hover:bg-zinc-800",
-      "surface_active": "bg-zinc-800"
+    "backgrounds": {
+      "page": "bg-[#0e0e0e]",
+      "surface": "bg-[#111111]",
+      "surface_hover": "hover:bg-[#1a1a1a]",
+      "surface_active": "bg-[#1e1e1e]"
+    },
+    "borders": {
+      "default": "border-[#1a1a1a]",
+      "subtle": "border-[#1e1e1e]",
+      "focus": "focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
     },
     "text": {
       "primary": "text-zinc-100",
       "secondary": "text-zinc-400",
-      "tertiary": "text-zinc-500",
-      "inverse": "text-zinc-950"
+      "muted": "text-zinc-500"
     },
-    "border": {
-      "default": "border-zinc-800",
-      "focus": "border-zinc-600"
-    },
-    "status": {
-      "active_in_progress": "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
-      "needs_attention_completion_ready": "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
-      "complete": "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
-      "abandoned_skipped": "text-zinc-500 bg-zinc-500/10 border-zinc-500/20",
-      "blocked_dependency": "text-red-400 bg-red-400/10 border-red-400/20"
-    }
-  },
-  "typography": {
-    "font_families": {
-      "primary": "font-sans (Geist, Inter, or IBM Plex Sans)",
-      "monospace": "font-mono (JetBrains Mono, IBM Plex Mono)"
-    },
-    "rules": {
-      "headings": "Compact, tracking-tight, minimal weight variation (use Medium/Semibold instead of ExtraBold).",
-      "monospace_usage": "Strictly for IDs (planId, passId), repo names, branch names, artifact paths, and executor adapter names.",
-      "sizes": {
-        "h1": "text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-100",
-        "h2": "text-xl font-medium tracking-tight text-zinc-100",
-        "eyebrow": "text-xs font-mono uppercase tracking-[0.2em] text-zinc-500",
-        "body": "text-sm text-zinc-300",
-        "small": "text-xs text-zinc-400"
+    "semantics": {
+      "active_running": {
+        "description": "blue/cyan for active/current/running",
+        "bg": "bg-blue-500/10",
+        "text": "text-blue-400",
+        "border": "border-blue-500/20"
+      },
+      "review_attention": {
+        "description": "gold/amber for review/attention/completion-ready/validation-needed",
+        "bg": "bg-amber-500/10",
+        "text": "text-amber-400",
+        "border": "border-amber-500/20"
+      },
+      "blocked_failed": {
+        "description": "red for blocked/failed/invalid/conflict",
+        "bg": "bg-red-500/10",
+        "text": "text-red-400",
+        "border": "border-red-500/20"
+      },
+      "complete_success": {
+        "description": "green/emerald for complete/accepted/success",
+        "bg": "bg-emerald-500/10",
+        "text": "text-emerald-400",
+        "border": "border-emerald-500/20"
+      },
+      "skipped_abandoned": {
+        "description": "gray for skipped/abandoned/disabled/unavailable",
+        "bg": "bg-zinc-500/10",
+        "text": "text-zinc-400",
+        "border": "border-zinc-500/20"
       }
     }
   },
   "spacing_and_layout": {
-    "container": "max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 md:space-y-8",
-    "corners": "rounded-md (max 6px radius for sharp, technical feel)",
-    "borders": "1px solid border-zinc-800, never thick, never glowing",
-    "density": "Compact paddings (px-3 py-2) for table/list items to maintain high data density"
+    "philosophy": "Compact technical UI, dense readable tables/lists. Reduce inconsistent borders and visual noise. Avoid excessive cards, shadows, gradients, and consumer SaaS polish. Operator-focused.",
+    "scale": {
+      "xs": "p-1",
+      "sm": "p-2",
+      "md": "p-4",
+      "lg": "p-6"
+    },
+    "radius": "rounded-none or rounded-sm (2px max). Maintain a sharp, structural technical look.",
+    "shadows": "None. Rely on 1px borders (#1a1a1a or #1e1e1e) for layer separation."
   },
   "components": {
-    "header_breadcrumb": {
-      "layout": "Flexbox, items-center, gap-3, bottom-bordered pb-4",
-      "elements": [
-        "Breadcrumb: 'Plans / <plan title>' in text-sm text-zinc-400",
-        "Title: Large prominent h1",
-        "Status Badge: Small pill, colored by status",
-        "Metadata row: Monospace IDs, Repo/Branch with small icons, artifact path, updated timestamp (text-xs text-zinc-500)"
-      ]
+    "page_headers": {
+      "classes": "flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a] bg-[#0e0e0e]"
     },
-    "plan_summary_card": {
-      "layout": "Bordered container (border-zinc-800 bg-zinc-900/50), p-5, rounded-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4",
-      "content": "Eyebrow (monospace), Title (text-lg), Message (text-sm text-zinc-400)",
-      "action": "Primary button (white/light gray bg, black text) for main action (Open current pass, Review completion evidence, etc.)"
+    "status_pills": {
+      "classes": "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium border"
     },
-    "progress_summary_strip": {
-      "layout": "Flex row, divide-x divide-zinc-800 border border-zinc-800 rounded-md bg-zinc-950 overflow-hidden",
-      "metrics": "Each block px-4 py-3 flex-1 flex flex-col gap-1",
-      "typography": "Label in text-xs text-zinc-500, Value in text-xl font-mono text-zinc-100"
+    "attention_pills": {
+      "classes": "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse"
     },
-    "pass_timeline_list": {
-      "layout": "Ordered vertical list, border border-zinc-800 rounded-md divide-y divide-zinc-800 bg-zinc-950",
-      "row": "Flexbox (or Grid cols) py-3 px-4 hover:bg-zinc-900/50 transition-colors items-center gap-4 text-sm",
-      "columns": {
-        "sequence": "text-xs font-mono text-zinc-500 w-8",
-        "name_and_id": "Flex col gap-0.5 min-w-[200px]. Name text-zinc-200 font-medium, ID text-xs font-mono text-zinc-500",
-        "status_pill": "Compact padding, color based on status",
-        "goal_scope": "Flex col gap-0.5 flex-1. Goal text-zinc-300, Scope text-xs text-zinc-500 truncate max-w-sm",
-        "dependencies": "Badges in text-xs font-mono. Red if blocked",
-        "actions": "Flex gap-2 items-center. Ghost buttons for View/Run/Copy"
-      },
-      "empty_states": "Intentional copy like 'No run created yet', 'No dependencies' in text-zinc-500 italic"
+    "table_rows": {
+      "desktop_classes": "group border-b border-[#1a1a1a] hover:bg-[#111111] transition-colors text-sm",
+      "cell_classes": "px-4 py-2 align-middle text-zinc-300"
     },
-    "artifacts_section": {
-      "layout": "Grid cols-1 md:grid-cols-2 gap-4 border border-zinc-800 rounded-md p-4 bg-zinc-900/30",
-      "details": "Label/Value pairs. Labels text-xs text-zinc-500, Values text-sm font-mono text-zinc-300"
+    "current_state_cards": {
+      "classes": "p-4 bg-[#111111] border border-[#1a1a1a] rounded-sm flex flex-col gap-2"
+    },
+    "right_inspector_panels": {
+      "classes": "hidden lg:flex flex-col w-80 lg:w-96 border-l border-[#1a1a1a] bg-[#0e0e0e] h-full overflow-y-auto"
+    },
+    "validation_panels": {
+      "classes": "bg-amber-500/5 border-l-2 border-amber-500/50 p-3 text-sm text-amber-100 flex flex-col gap-1"
+    },
+    "error_states": {
+      "classes": "bg-red-500/5 border border-red-500/20 p-4 text-sm text-red-200 rounded-sm flex flex-col items-start gap-2"
+    },
+    "empty_states": {
+      "classes": "flex flex-col items-center justify-center p-8 text-center text-zinc-500 border border-dashed border-[#1a1a1a] rounded-sm"
+    },
+    "loading_states": {
+      "classes": "flex items-center justify-center space-x-2 p-4 text-sm text-zinc-500 animate-pulse"
     }
   },
-  "interactive_elements": {
-    "buttons": "Restrained. Primary: bg-zinc-100 text-zinc-950 hover:bg-white. Secondary/Ghost: hover:bg-zinc-800 text-zinc-300",
-    "links": "text-zinc-300 hover:text-white underline-offset-4 hover:underline",
-    "pills": "rounded-full px-2 py-0.5 text-xs font-medium border"
+  "mobile_strategy": {
+    "breakpoints": {
+      "mobile": "default (<768px)",
+      "tablet": "md (768px)",
+      "desktop": "lg (1024px)"
+    },
+    "layout": "Single-column responsive on mobile.",
+    "tables_to_stacked_rows": {
+      "strategy": "Convert tables to compact STACKED ROWS on mobile, not giant cards. Remove table headers, use flexbox to stack key data vertically while keeping status/IDs/primary actions visible in top-right or inline.",
+      "container_classes": "flex flex-col border-b border-[#1a1a1a] p-3 gap-1 hover:bg-[#111111]",
+      "primary_row": "flex justify-between items-start text-sm text-zinc-100",
+      "secondary_row": "text-xs text-zinc-500 flex gap-2 flex-wrap items-center"
+    },
+    "inspector_and_details": {
+      "strategy": "Move right inspector/details into tabs, accordions, or bottom drawers on mobile. Avoid desktop side-panels.",
+      "tabs_classes": "flex overflow-x-auto border-b border-[#1a1a1a] hide-scrollbar gap-4 px-4 bg-[#0e0e0e]",
+      "tab_item": "py-2 text-sm text-zinc-400 whitespace-nowrap border-b-2 border-transparent focus:outline-none",
+      "tab_item_active": "text-zinc-100 border-zinc-100",
+      "drawer_classes": "fixed inset-x-0 bottom-0 z-50 bg-[#111111] border-t border-[#1a1a1a] p-4 max-h-[80vh] overflow-y-auto rounded-t-sm shadow-xl"
+    }
   },
-  "testing_attributes": {
-    "rule": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case based on role.",
-    "examples": [
-      "data-testid=\"plan-breadcrumb-link\"",
-      "data-testid=\"plan-status-badge\"",
-      "data-testid=\"plan-summary-action-button\"",
-      "data-testid=\"pass-row-1\"",
-      "data-testid=\"pass-run-button-1\"",
-      "data-testid=\"copy-pass-id-button\""
-    ]
-  },
-  "instructions_to_main_agent": "IMPORTANT: Write React components using .js/.jsx syntax, NOT .tsx. Ensure the layout does not resemble a kanban board or marketing page. Strictly use the provided status color system. Implement the page structure exactly as specified in the components section using Tailwind CSS. Preserve dark theme and compact technical layout. Build components functionally using Shadcn primitives customized for dense, border-restrained styling."
+  "testing": {
+    "attributes": "All interactive elements MUST include data-testid attribute for stable testing (e.g., data-testid='plan-submit-btn')"
+  }
 }
